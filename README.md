@@ -1,165 +1,169 @@
-# Pyramid — Task Management System
+# Pyramid — Task Management System (Full Stack)
 
-A task management web application built from the provided design screens. The project focuses on the frontend implementation, responsive UI, task/project management, and theme customization.
+A modern full-stack Task Management System built with a **Next.js 16 App Router** frontend and a **NestJS + MongoDB + Prisma ORM** REST API backend.
 
-## Tech Stack
+---
 
-* Next.js 16
-* React 19
-* TypeScript
-* Tailwind CSS v4
-* Lucide React
-* Browser `localStorage`
+## 🚀 Tech Stack
 
-## Features
+### Frontend (`/frontend`)
+- **Framework**: Next.js 16 (App Router) + React 19 + TypeScript
+- **Styling**: Tailwind CSS v4
+- **Icons**: Lucide React
+- **API Integration**: Custom typed fetch client (`src/lib/api.ts`) connected to NestJS API
 
-### Authentication
+### Backend (`/backend`)
+- **Framework**: NestJS 10 + TypeScript
+- **Database & ORM**: MongoDB + Prisma ORM
+- **Validation**: `class-validator` + `class-transformer` (Global `ValidationPipe` with whitelist & transform enabled)
+- **Auth**: JWT Authentication (`@nestjs/jwt`, `@nestjs/passport`, `passport-jwt`)
+- **API Docs**: OpenAPI / Swagger at `/api/docs`
+- **Error Handling**: Global `HttpExceptionFilter` for uniform error JSON responses
 
-* Continue as Guest
-* Mock Google login
-* Login session stored in `localStorage`
-* Protected application routes
-* Logout functionality
+---
 
-### Tasks
+## ⚡ Quick Start with Docker Compose
 
-* Kanban board view
-* List view
-* Search tasks
-* Filter by status, priority, members, due date, and labels
-* Show/hide task fields
-* Add and delete tasks
-* Task detail page
-* Edit task title and description
-* Assign members
-* Set priority and due date
-* Add labels
-* Add subtasks
-* Comments section
-* Task activity/updates
-
-### Projects
-
-* Projects list
-* Search and filtering
-* Add projects
-* Project details
-* View tasks belonging to a project
-* Board and List views for project tasks
-
-### Settings
-
-* Profile settings
-* Light and dark themes
-* Accent color selection
-* Settings are saved between sessions
-
-### Responsive Design
-
-The application is designed to work across desktop, tablet, and mobile screen sizes.
-
-* Responsive sidebar with mobile drawer
-* Horizontal scrolling for the Kanban board on smaller screens
-* Responsive task and project tables
-* Mobile-friendly task details layout
-* Responsive settings navigation
-
-## Project Structure
-
-```text
-src/
-├── app/
-│   ├── login/
-│   ├── (app)/
-│   │   ├── tasks/
-│   │   └── projects/
-│   └── settings/
-│
-├── components/
-│   ├── layout/
-│   ├── navigation/
-│   ├── tasks/
-│   ├── projects/
-│   └── ui/
-│
-├── hooks/
-├── data/
-├── types/
-└── lib/
-```
-
-## Getting Started
-
-Clone the repository and install the dependencies:
+Run the entire backend stack (MongoDB 7 Replica Set + NestJS API) with a single command:
 
 ```bash
+docker compose up --build
+```
+
+- **NestJS API**: [http://localhost:3000](http://localhost:3000)
+- **Swagger Docs**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+- **MongoDB**: `localhost:27017` (Replica set `rs0` automatically initialized)
+
+Then start the frontend:
+
+```bash
+cd frontend
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-Open:
+Open [http://localhost:3001](http://localhost:3001) or [http://localhost:3000](http://localhost:3000).
+
+---
+
+## 📁 Repository Structure
 
 ```text
-http://localhost:3000
+pyramid/
+├── docker-compose.yml
+├── README.md
+├── frontend/
+│   ├── src/
+│   │   ├── app/            # Next.js App Router pages
+│   │   ├── components/     # UI, Task & Project components
+│   │   ├── hooks/          # useAuth, useTasks, useProjects
+│   │   ├── lib/            # api.ts client & storage helpers
+│   │   ├── types/          # TypeScript domain interfaces
+│   │   └── data/           # Initial mock data for seeding
+│   ├── .env.example
+│   └── package.json
+└── backend/
+    ├── prisma/
+    │   ├── schema.prisma   # MongoDB Prisma schema with embedded types
+    │   └── seed.ts         # Seeder for members, labels, projects, tasks
+    ├── src/
+    │   ├── auth/           # AuthModule (/auth/guest, /auth/google, /auth/me)
+    │   ├── users/          # UsersModule (/users)
+    │   ├── projects/       # ProjectsModule (/projects CRUD)
+    │   ├── tasks/          # TasksModule (/tasks CRUD, subtasks, comments)
+    │   ├── health/         # HealthModule (/health)
+    │   ├── common/         # Global HttpExceptionFilter
+    │   └── prisma/         # PrismaService & PrismaModule
+    ├── Dockerfile          # Multi-stage production build
+    ├── .env.example
+    └── package.json
 ```
 
-For a production build:
+---
+
+## 📡 API Endpoints
+
+All mutating endpoints (`POST`, `PATCH`, `DELETE`) require a Bearer Token in `Authorization` header: `Authorization: Bearer <token>`.
+
+### Health & Docs
+- `GET /health` — Deployment health check (returns `{ status: "ok" }`)
+- `GET /api/docs` — Interactive OpenAPI / Swagger UI
+
+### Authentication (`/auth`)
+- `POST /auth/guest` — Authenticate as a guest user (returns `{ accessToken, user }`)
+- `POST /auth/google` — Mock Google OAuth login (returns `{ accessToken, user }`)
+- `GET /auth/me` — Get current authenticated user details (JWT-guarded)
+
+### Members & Users (`/users`)
+- `GET /users` — List members for task/project assignment pickers
+
+### Projects (`/projects`)
+- `GET /projects` — List all projects
+- `GET /projects/:id` — Get project details by ID
+- `POST /projects` — Create new project (JWT-guarded)
+- `PATCH /projects/:id` — Partial update project (JWT-guarded)
+- `DELETE /projects/:id` — Delete project (JWT-guarded)
+
+### Tasks (`/tasks`)
+- `GET /tasks` — List tasks with query params (`?projectId=`, `?status=`, `?search=`)
+- `GET /tasks/:id` — Get task by ID with subtasks, comments, updates
+- `POST /tasks` — Create new task (JWT-guarded)
+- `PATCH /tasks/:id` — Update task fields (status, priority, assignees, labels, dates) (JWT-guarded)
+- `DELETE /tasks/:id` — Delete task (JWT-guarded)
+- `POST /tasks/:id/subtasks` — Add subtask to task (JWT-guarded)
+- `PATCH /tasks/:id/subtasks/:subtaskId` — Update/toggle subtask (JWT-guarded)
+- `POST /tasks/:id/comments` — Add comment to task (JWT-guarded)
+
+---
+
+## 🔌 Backend Integration Details
+
+The Next.js frontend has been connected to the NestJS API **without altering the public interfaces** of `useAuth()`, `useTasks()`, or `useProjects()`.
+
+### Key Changes:
+1. **`src/lib/api.ts`**:
+   - Created a typed fetch wrapper reading `process.env.NEXT_PUBLIC_API_URL`.
+   - Automatically attaches `Authorization: Bearer <token>` from stored session.
+   - Throws clear error messages on non-2xx responses.
+
+2. **`useAuth.tsx`**:
+   - Replaced mock session generation with API calls to `/auth/guest` and `/auth/google`.
+   - Stores returned `accessToken` alongside `user` and `provider` under `STORAGE_KEYS.session` in `localStorage`.
+
+3. **`useTasks.tsx` & `useProjects.tsx`**:
+   - Replaced `useLocalStorage` backing state with `useState` + `useEffect` fetching live data from `/tasks` and `/projects` on mount.
+   - All mutation methods (`addTask`, `updateTask`, `deleteTask`, `moveTask`, `addComment`, `addSubtask`, `toggleSubtask`, `addProject`) call the corresponding NestJS endpoint and optimistically update state.
+
+---
+
+## 🗄️ Database Seeding
+
+To load the exact mock data from `src/data/` into your MongoDB database:
 
 ```bash
-npm run build
-npm run start
+cd backend
+npm run prisma:seed
 ```
 
-To run ESLint:
+---
 
-```bash
-npm run lint
-```
+## 🚢 Deployment Guide
 
-## Data Storage
+### Deploying Backend (Render or Railway + MongoDB Atlas)
+1. Provision a free MongoDB database on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
+2. Connect to backend service on Render or Railway.
+3. Configure build and start commands:
+   - **Build Command**: `npm run build`
+   - **Start Command**: `npm run start:prod`
+4. Environment variables:
+   - `DATABASE_URL`: MongoDB Atlas replica set URI (`mongodb+srv://...`)
+   - `JWT_SECRET`: Random 32+ char secret string
+   - `JWT_EXPIRES_IN`: `7d`
+   - `CORS_ORIGIN`: Deployed Vercel frontend URL
+   - `PORT`: `3000`
 
-This version is frontend-only, so there is no backend or database.
-
-Tasks, projects, authentication state, theme settings, and other user preferences are stored in the browser using `localStorage`.
-
-The application logic is kept inside reusable hooks such as:
-
-* `useAuth`
-* `useTasks`
-* `useProjects`
-* `useTheme`
-* `useLocalStorage`
-
-This keeps the components separated from the storage logic and makes it easier to connect a real API later.
-
-## Design Notes
-
-The provided screenshots were used as the main reference for the UI.
-
-A few areas were simplified for the frontend-only implementation:
-
-* Google login uses a mock account instead of real OAuth.
-* Tasks and projects use local mock data.
-* The task due date uses a single date instead of a date range.
-* Resources are currently UI-only and don't upload files.
-* Board and List views use the same underlying task data.
-
-## Future Backend Integration
-
-A real backend can be connected later without changing most of the UI components.
-
-The existing hooks can be updated to communicate with a NestJS API for:
-
-* User authentication
-* Task CRUD operations
-* Project CRUD operations
-* Task assignments
-* Comments
-* Persistent database storage
-
-
+### Deploying Frontend (Vercel)
+1. Import the `/frontend` directory in Vercel.
+2. Set Environment Variable:
+   - `NEXT_PUBLIC_API_URL`: URL of your deployed NestJS backend (e.g. `https://pyramid-api.onrender.com`).
+3. Deploy!
