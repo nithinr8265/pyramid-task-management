@@ -13,10 +13,10 @@ frontend/.env.local
 backend/dist/
 backend/.env
 
-# Environment / Secrets
+# Environment / Secrets (track .env.example)
 .env
 .env.local
-*.env
+.env.production
 
 # IDE / OS
 .DS_Store
