@@ -1,0 +1,89 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Priority {
+  NO_PRIORITY @map("no-priority")
+  URGENT      @map("urgent")
+  HIGH        @map("high")
+  MEDIUM      @map("medium")
+  LOW         @map("low")
+}
+
+enum StatusId {
+  TODO      @map("todo")
+  DOING     @map("doing")
+  COMPLETED @map("completed")
+  ON_HOLD   @map("on-hold")
+}
+
+model User {
+  id        String   @id @map("_id")
+  name      String
+  email     String   @unique
+  provider  String   // "guest" | "google"
+  initials  String
+  color     String
+  createdAt DateTime @default(now())
+}
+
+model Project {
+  id       String   @id @map("_id")
+  name     String
+  priority Priority @default(NO_PRIORITY)
+  leadId   String
+  dueDate  String?
+}
+
+model Label {
+  id   String @id @map("_id")
+  name String
+}
+
+type SubtaskEmbedded {
+  id        String   @default(cuid())
+  title     String
+  priority  Priority @default(NO_PRIORITY)
+  memberIds String[]
+  dueDate   String?
+  done      Boolean  @default(false)
+}
+
+type CommentEmbedded {
+  id        String   @default(cuid())
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+type UpdateEntryEmbedded {
+  id        String   @default(cuid())
+  authorId  String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id           String                @id @map("_id")
+  title        String
+  description  String?
+  projectId    String?
+  status       StatusId              @default(TODO)
+  priority     Priority              @default(NO_PRIORITY)
+  memberIds    String[]
+  reporterId   String?
+  labelIds     String[]
+  dueDate      String?
+  startDate    String?
+  watcherCount Int?                  @default(0)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  subtasks     SubtaskEmbedded[]
+  comments     CommentEmbedded[]
+  updates      UpdateEntryEmbedded[]
+}
