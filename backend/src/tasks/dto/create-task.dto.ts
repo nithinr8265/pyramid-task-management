@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Priority, StatusId } from "@prisma/client";
+import { Transform } from "class-transformer";
 import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateTaskDto {
@@ -10,11 +11,17 @@ export class CreateTaskDto {
 
   @ApiPropertyOptional({ enum: StatusId, example: "todo" })
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.toUpperCase().replace(/-/g, "_") : value
+  )
   @IsEnum(StatusId)
   status?: StatusId;
 
   @ApiPropertyOptional({ enum: Priority, example: "high" })
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.toUpperCase().replace(/-/g, "_") : value
+  )
   @IsEnum(Priority)
   priority?: Priority;
 

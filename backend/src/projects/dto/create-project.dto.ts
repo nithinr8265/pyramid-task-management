@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Priority } from "@prisma/client";
+import { Transform } from "class-transformer";
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateProjectDto {
@@ -10,6 +11,9 @@ export class CreateProjectDto {
 
   @ApiPropertyOptional({ enum: Priority, example: "high" })
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.toUpperCase().replace(/-/g, "_") : value
+  )
   @IsEnum(Priority)
   priority?: Priority;
 

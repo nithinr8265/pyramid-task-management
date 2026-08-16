@@ -379,33 +379,37 @@ async function main() {
   console.log("Seeding MongoDB database...");
 
   for (const m of members) {
+    const { id, ...data } = m;
     await prisma.user.upsert({
-      where: { id: m.id },
-      update: m,
+      where: { id },
+      update: data,
       create: m,
     });
   }
 
   for (const l of labels) {
+    const { id, ...data } = l;
     await prisma.label.upsert({
-      where: { id: l.id },
-      update: l,
+      where: { id },
+      update: data,
       create: l,
     });
   }
 
   for (const p of projects) {
+    const { id, ...data } = p;
     await prisma.project.upsert({
-      where: { id: p.id },
-      update: p,
+      where: { id },
+      update: data,
       create: p,
     });
   }
 
   for (const t of tasks) {
+    const { id, ...data } = t;
     await prisma.task.upsert({
-      where: { id: t.id },
-      update: t,
+      where: { id },
+      update: data,
       create: t,
     });
   }
