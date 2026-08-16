@@ -4,6 +4,21 @@ A modern full-stack Task Management System built with a **Next.js 16 App Router*
 
 ---
 
+## 💡 Database Choice: MongoDB Tradeoff
+
+**Why MongoDB instead of PostgreSQL?**
+MongoDB was selected alongside Prisma ORM using Prisma's MongoDB provider. Tasks in Pyramid contain rich nested entities (`subtasks`, `comments`, and `updates`). 
+
+- **Benefits**:
+  - **Embedded Documents & Arrays**: Subtasks, comments, and activity updates are stored as native embedded document arrays (`type SubtaskEmbedded`, etc.), and member/label assignments are stored as native string arrays (`memberIds String[]`). This matches `src/types/index.ts` 1-to-1 without multi-table SQL joins or junction tables.
+  - **Atomic Operations**: Updating subtask status, pushing new comments, or appending activity logs are atomic single-document updates.
+  - **Performance**: High performance for task board queries and detail views.
+- **Tradeoff**:
+  - Requires MongoDB 7 replica set mode (e.g. Atlas or Docker single-node replica set `rs0`) for Prisma transactions.
+  - Relational cascade deletes are handled at the application service level rather than database foreign key constraints.
+
+---
+
 ## 🚀 Tech Stack
 
 ### Frontend (`/frontend`)
