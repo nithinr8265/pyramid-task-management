@@ -3,6 +3,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install OpenSSL and compatibility libraries for Prisma query engine
+RUN sed -i 's/https/http/' /etc/apk/repositories && \
+    apk update && \
+    apk add --no-cache openssl libc6-compat
+
 COPY package*.json ./
 COPY prisma ./prisma/
 
@@ -17,6 +22,11 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 WORKDIR /app
+
+# Install OpenSSL and compatibility libraries in runtime environment
+RUN sed -i 's/https/http/' /etc/apk/repositories && \
+    apk update && \
+    apk add --no-cache openssl libc6-compat
 
 ENV NODE_ENV=production
 
