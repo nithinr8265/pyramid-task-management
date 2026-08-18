@@ -59,6 +59,7 @@ services:
       DATABASE_URL: "mongodb://root:examplepassword@mongodb:27017/pyramid?authSource=admin&replicaSet=rs0"
       JWT_SECRET: "super-secret-jwt-key-change-in-production"
       JWT_EXPIRES_IN: "7d"
+      GOOGLE_CLIENT_ID: "160368229883-i7dcqojrdculqi3smi2h9tjoom5d6aoo.apps.googleusercontent.com"
       CORS_ORIGIN: "http://localhost:3001,http://localhost:3000"
       PORT: 3000
     depends_on:

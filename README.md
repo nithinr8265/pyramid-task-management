@@ -19,10 +19,62 @@ MongoDB was selected alongside Prisma ORM using Prisma's MongoDB provider. Tasks
 
 ---
 
+## 🔐 Google Sign-In Setup
+
+Pyramid supports real Google Sign-In via official **Google Identity Services (GIS)** with popup account selection and cryptographic ID token verification on the NestJS backend.
+
+### 1. Create Google OAuth Web Client ID
+1. Navigate to the [Google Cloud Console Credentials page](https://console.cloud.google.com/apis/credentials).
+2. Click **Create Credentials** -> **OAuth Client ID**.
+3. Set Application Type to **Web application**.
+4. Under **Authorized JavaScript origins**, add your local frontend URL:
+   - `http://localhost:3001` (and `http://localhost:3000` if running on port 3000).
+5. Copy the generated **Client ID** (`...apps.googleusercontent.com`).
+
+### 2. Configure Environment Variables
+
+**Frontend (`frontend/.env.local`)**:
+```bash
+NEXT_PUBLIC_API_URL="http://localhost:3000"
+NEXT_PUBLIC_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+```
+
+**Backend (`backend/.env`)**:
+```bash
+DATABASE_URL="mongodb://root:examplepassword@localhost:27017/pyramid?authSource=admin&replicaSet=rs0"
+JWT_SECRET="super-secret-jwt-key-change-in-production"
+JWT_EXPIRES_IN="7d"
+GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+CORS_ORIGIN="http://localhost:3001,http://localhost:3000"
+PORT=3000
+```
+
+### 3. Run MongoDB, Backend, and Frontend
+
+**Start MongoDB**:
+```bash
+docker compose up -d mongodb
+```
+
+**Start NestJS Backend**:
+```bash
+cd backend
+npm run start:dev
+```
+
+**Start Next.js Frontend**:
+```bash
+cd frontend
+npm run dev
+```
+
+---
+
 ## 🚀 Tech Stack
 
 ### Frontend (`/frontend`)
 - **Framework**: Next.js 16 (App Router) + React 19 + TypeScript
+- **Authentication**: Google Identity Services (GIS) Web SDK + Guest Login
 - **Styling**: Tailwind CSS v4
 - **Icons**: Lucide React
 - **API Integration**: Custom typed fetch client (`src/lib/api.ts`) connected to NestJS API
@@ -30,8 +82,8 @@ MongoDB was selected alongside Prisma ORM using Prisma's MongoDB provider. Tasks
 ### Backend (`/backend`)
 - **Framework**: NestJS 10 + TypeScript
 - **Database & ORM**: MongoDB + Prisma ORM
+- **Authentication**: `google-auth-library` ID Token Verification + Passport JWT
 - **Validation**: `class-validator` + `class-transformer` (Global `ValidationPipe` with whitelist & transform enabled)
-- **Auth**: JWT Authentication (`@nestjs/jwt`, `@nestjs/passport`, `passport-jwt`)
 - **API Docs**: OpenAPI / Swagger at `/api/docs`
 - **Error Handling**: Global `HttpExceptionFilter` for uniform error JSON responses
 
@@ -106,7 +158,7 @@ All mutating endpoints (`POST`, `PATCH`, `DELETE`) require a Bearer Token in `Au
 
 ### Authentication (`/auth`)
 - `POST /auth/guest` — Authenticate as a guest user (returns `{ accessToken, user }`)
-- `POST /auth/google` — Mock Google OAuth login (returns `{ accessToken, user }`)
+- `POST /auth/google` — Authenticate with verified Google ID token (`{ credential }`)
 - `GET /auth/me` — Get current authenticated user details (JWT-guarded)
 
 ### Members & Users (`/users`)
@@ -142,7 +194,7 @@ The Next.js frontend has been connected to the NestJS API **without altering the
    - Throws clear error messages on non-2xx responses.
 
 2. **`useAuth.tsx`**:
-   - Replaced mock session generation with API calls to `/auth/guest` and `/auth/google`.
+   - Replaced mock session generation with real API calls to `/auth/guest` and `/auth/google`.
    - Stores returned `accessToken` alongside `user` and `provider` under `STORAGE_KEYS.session` in `localStorage`.
 
 3. **`useTasks.tsx` & `useProjects.tsx`**:
@@ -174,11 +226,13 @@ npm run prisma:seed
    - `DATABASE_URL`: MongoDB Atlas replica set URI (`mongodb+srv://...`)
    - `JWT_SECRET`: Random 32+ char secret string
    - `JWT_EXPIRES_IN`: `7d`
+   - `GOOGLE_CLIENT_ID`: Google OAuth Client ID
    - `CORS_ORIGIN`: Deployed Vercel frontend URL
    - `PORT`: `3000`
 
 ### Deploying Frontend (Vercel)
 1. Import the `/frontend` directory in Vercel.
-2. Set Environment Variable:
+2. Set Environment Variables:
    - `NEXT_PUBLIC_API_URL`: URL of your deployed NestJS backend (e.g. `https://pyramid-api.onrender.com`).
+   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth Client ID
 3. Deploy!
