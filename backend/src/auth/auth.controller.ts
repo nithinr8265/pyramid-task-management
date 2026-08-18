@@ -25,7 +25,7 @@ export class AuthController {
     return this.authService.loginAsGuest();
   }
 
-  @ApiOperation({ summary: "Mock Google login" })
+  @ApiOperation({ summary: "Google login with verified credential token" })
   @HttpCode(HttpStatus.OK)
   @Post("google")
   async loginWithGoogle(@Body() dto: GoogleLoginDto) {

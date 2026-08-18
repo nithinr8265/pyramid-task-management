@@ -17,7 +17,7 @@ async function runVerification() {
 
   process.env.DATABASE_URL = uri;
   process.env.JWT_SECRET = "test-jwt-secret";
-  process.env.PORT = "3000";
+  process.env.PORT = "3009";
 
   console.log("\n2. Connecting PrismaClient and running DB seed...");
   const prisma = new PrismaClient({
@@ -72,14 +72,14 @@ async function runVerification() {
   const taskCount = await prisma.task.count();
   console.log(`[PASS] DB Seeded: ${userCount} users, ${projectCount} projects, ${taskCount} tasks.`);
 
-  console.log("\n3. Booting NestJS Application Server...");
+  console.log("\n3. Booting NestJS Application Server on port 3009...");
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
-  await app.listen(3000);
-  console.log("[PASS] NestJS API listening at http://localhost:3000");
+  await app.listen(3009);
+  console.log("[PASS] NestJS API listening at http://localhost:3009");
 
-  const baseUrl = "http://localhost:3000";
+  const baseUrl = "http://localhost:3009";
 
   console.log("\n4. Testing API Endpoints...");
 
@@ -97,15 +97,14 @@ async function runVerification() {
 
   const guestToken = guestData.accessToken;
 
-  // Auth Google
-  const resGoogle = await fetch(`${baseUrl}/auth/google`, {
+  // Auth Google validation check (expect 400 when credential missing)
+  const resGoogleInvalid = await fetch(`${baseUrl}/auth/google`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: "Dexter", email: "dexter@gmail.com" }),
+    body: JSON.stringify({}),
   });
-  const googleData = await resGoogle.json();
-  console.log(`[POST /auth/google] Status: ${resGoogle.status}, User: ${googleData.user?.name}`);
-  if (!googleData.accessToken) throw new Error("Google login failed");
+  console.log(`[POST /auth/google (empty)] Status: ${resGoogleInvalid.status} (Expected 400)`);
+  if (resGoogleInvalid.status !== 400) throw new Error("Expected 400 for empty Google credential");
 
   // Auth Me
   const resMe = await fetch(`${baseUrl}/auth/me`, {
