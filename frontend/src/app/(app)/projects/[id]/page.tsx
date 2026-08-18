@@ -135,7 +135,9 @@ export default function ProjectDetailPage({
         open={addModalStatus !== null}
         defaultStatus={addModalStatus ?? "todo"}
         onClose={() => setAddModalStatus(null)}
-        onSubmit={(title, status) => addTask({ title, status, projectId: id })}
+        onSubmit={async (title, status) => {
+          await addTask({ title, status, projectId: id });
+        }}
       />
     </>
   );

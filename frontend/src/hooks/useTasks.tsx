@@ -8,8 +8,52 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Comment, Priority, StatusId, Subtask, Task } from "@/types";
+import { Comment, Priority, StatusId, Subtask, Task, UpdateEntry } from "@/types";
 import { api } from "@/lib/api";
+
+interface ApiSubtask {
+  id: string;
+  title: string;
+  priority?: string;
+  memberIds?: string[];
+  dueDate?: string;
+  done?: boolean;
+}
+
+interface ApiComment {
+  id: string;
+  authorId: string;
+  body: string;
+  createdAt?: string | Date;
+}
+
+interface ApiUpdate {
+  id: string;
+  authorId: string;
+  message: string;
+  createdAt?: string | Date;
+}
+
+interface ApiTask {
+  id: string;
+  title: string;
+  description?: string;
+  projectId?: string;
+  status?: string;
+  priority?: string;
+  memberIds?: string[];
+  reporterId?: string;
+  labelIds?: string[];
+  teamIds?: string[];
+  startDate?: string;
+  dueDate?: string;
+  resources?: { label: string; url: string }[];
+  watcherCount?: number;
+  createdAt?: string | Date;
+  subtasks?: ApiSubtask[];
+  comments?: ApiComment[];
+  updates?: ApiUpdate[];
+}
 
 interface TasksContextValue {
   tasks: Task[];
@@ -19,21 +63,114 @@ interface TasksContextValue {
     title: string;
     status: StatusId;
     projectId?: string;
-  }) => Task;
+    priority?: Priority;
+    description?: string;
+    dueDate?: string;
+    startDate?: string;
+    memberIds?: string[];
+    labelIds?: string[];
+  }) => Promise<Task>;
   updateTask: (id: string, patch: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   moveTask: (id: string, status: StatusId) => void;
-  addComment: (taskId: string, body: string, authorId: string) => void;
+  addComment: (taskId: string, body: string, authorId?: string) => void;
   addSubtask: (taskId: string, title: string) => void;
   toggleSubtask: (taskId: string, subtaskId: string) => void;
 }
 
 const TasksContext = createContext<TasksContextValue | null>(null);
 
-function makeId(title: string) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}-${Date.now()
-    .toString(36)
-    .slice(-5)}`;
+function normalizeStatus(status?: string): StatusId {
+  if (!status) return "todo";
+  const s = status.toLowerCase().replace(/_/g, "-");
+  if (s === "doing" || s === "completed" || s === "on-hold" || s === "todo") {
+    return s as StatusId;
+  }
+  return "todo";
+}
+
+function normalizePriority(priority?: string): Priority {
+  if (!priority) return "no-priority";
+  const p = priority.toLowerCase().replace(/_/g, "-");
+  if (
+    p === "urgent" ||
+    p === "high" ||
+    p === "medium" ||
+    p === "low" ||
+    p === "no-priority"
+  ) {
+    return p as Priority;
+  }
+  return "no-priority";
+}
+
+function normalizeTask(t: ApiTask): Task {
+  const createdAtStr =
+    t.createdAt instanceof Date
+      ? t.createdAt.toISOString()
+      : typeof t.createdAt === "string"
+      ? t.createdAt
+      : new Date().toISOString();
+
+  const subtasks: Subtask[] = Array.isArray(t.subtasks)
+    ? t.subtasks.map((s) => ({
+        id: s.id,
+        title: s.title,
+        priority: normalizePriority(s.priority),
+        memberIds: Array.isArray(s.memberIds) ? s.memberIds : [],
+        dueDate: s.dueDate || undefined,
+        done: Boolean(s.done),
+      }))
+    : [];
+
+  const comments: Comment[] = Array.isArray(t.comments)
+    ? t.comments.map((c) => ({
+        id: c.id,
+        authorId: c.authorId,
+        body: c.body,
+        createdAt:
+          c.createdAt instanceof Date
+            ? c.createdAt.toISOString()
+            : typeof c.createdAt === "string"
+            ? c.createdAt
+            : new Date().toISOString(),
+      }))
+    : [];
+
+  const updates: UpdateEntry[] = Array.isArray(t.updates)
+    ? t.updates.map((u) => ({
+        id: u.id,
+        authorId: u.authorId,
+        message: u.message,
+        createdAt:
+          u.createdAt instanceof Date
+            ? u.createdAt.toISOString()
+            : typeof u.createdAt === "string"
+            ? u.createdAt
+            : new Date().toISOString(),
+      }))
+    : [];
+
+  return {
+    id: t.id,
+    title: t.title,
+    description: t.description || undefined,
+    projectId: t.projectId || undefined,
+    status: normalizeStatus(t.status),
+    priority: normalizePriority(t.priority),
+    memberIds: Array.isArray(t.memberIds) ? t.memberIds : [],
+    reporterId: t.reporterId || undefined,
+    labelIds: Array.isArray(t.labelIds) ? t.labelIds : [],
+    teamIds: Array.isArray(t.teamIds) ? t.teamIds : undefined,
+    startDate: t.startDate || undefined,
+    dueDate: t.dueDate || undefined,
+    resources: Array.isArray(t.resources) ? t.resources : undefined,
+    watcherCount: t.watcherCount ?? 0,
+    createdAt: createdAtStr,
+    subtasks,
+    comments,
+    updates,
+  };
 }
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
@@ -43,10 +180,10 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     api
-      .get<Task[]>("/tasks")
+      .get<ApiTask[]>("/tasks")
       .then((data) => {
-        if (isMounted) {
-          setTasks(data);
+        if (isMounted && Array.isArray(data)) {
+          setTasks(data.map(normalizeTask));
         }
       })
       .catch((err) => {
@@ -69,55 +206,39 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addTask = useCallback(
-    (input: { title: string; status: StatusId; projectId?: string }) => {
-      const tempId = makeId(input.title);
-      const tempTask: Task = {
-        id: tempId,
-        title: input.title,
-        status: input.status,
-        priority: "no-priority" as Priority,
-        memberIds: [],
-        labelIds: [],
-        projectId: input.projectId,
-        subtasks: [],
-        comments: [],
-        updates: [],
-        createdAt: new Date().toISOString(),
-      };
-
-      setTasks((prev) => [...prev, tempTask]);
-
-      api
-        .post<Task>("/tasks", input)
-        .then((createdTask) => {
-          setTasks((prev) =>
-            prev.map((t) => (t.id === tempId ? createdTask : t))
-          );
-        })
-        .catch((err) => {
-          console.error("Failed to create task on server:", err);
-        });
-
-      return tempTask;
+    async (input: {
+      title: string;
+      status: StatusId;
+      projectId?: string;
+      priority?: Priority;
+      description?: string;
+      dueDate?: string;
+      startDate?: string;
+      memberIds?: string[];
+      labelIds?: string[];
+    }) => {
+      const createdTask = await api.post<ApiTask>("/tasks", input);
+      const normalized = normalizeTask(createdTask);
+      setTasks((prev) => [normalized, ...prev]);
+      return normalized;
     },
     []
   );
 
-  const updateTask = useCallback((id: string, patch: Partial<Task>) => {
+  const updateTask = useCallback(async (id: string, patch: Partial<Task>) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...patch } : t))
     );
 
-    api
-      .patch<Task>(`/tasks/${id}`, patch)
-      .then((updatedTask) => {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === id ? updatedTask : t))
-        );
-      })
-      .catch((err) => {
-        console.error(`Failed to update task ${id}:`, err);
-      });
+    try {
+      const updatedTask = await api.patch<ApiTask>(`/tasks/${id}`, patch);
+      const normalized = normalizeTask(updatedTask);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? normalized : t))
+      );
+    } catch (err) {
+      console.error(`Failed to update task ${id}:`, err);
+    }
   }, []);
 
   const deleteTask = useCallback((id: string) => {
@@ -136,92 +257,72 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addComment = useCallback(
-    (taskId: string, body: string, authorId: string) => {
-      const tempComment: Comment = {
-        id: makeId("comment"),
-        authorId,
-        body,
-        createdAt: new Date().toISOString(),
-      };
-
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId ? { ...t, comments: [...t.comments, tempComment] } : t
-        )
-      );
-
-      api
-        .post<Task>(`/tasks/${taskId}/comments`, { body })
-        .then((updatedTask) => {
-          setTasks((prev) =>
-            prev.map((t) => (t.id === taskId ? updatedTask : t))
-          );
-        })
-        .catch((err) => {
-          console.error(`Failed to add comment to task ${taskId}:`, err);
-        });
+    async (taskId: string, body: string) => {
+      try {
+        const updatedTask = await api.post<ApiTask>(
+          `/tasks/${taskId}/comments`,
+          { body }
+        );
+        const normalized = normalizeTask(updatedTask);
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? normalized : t))
+        );
+      } catch (err) {
+        console.error(`Failed to add comment to task ${taskId}:`, err);
+      }
     },
     []
   );
 
-  const addSubtask = useCallback((taskId: string, title: string) => {
-    const tempSubtask: Subtask = {
-      id: makeId("subtask"),
-      title,
-      priority: "no-priority",
-      memberIds: [],
-      done: false,
-    };
-
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, subtasks: [...t.subtasks, tempSubtask] }
-          : t
-      )
-    );
-
-    api
-      .post<Task>(`/tasks/${taskId}/subtasks`, { title })
-      .then((updatedTask) => {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? updatedTask : t))
-        );
-      })
-      .catch((err) => {
-        console.error(`Failed to add subtask to task ${taskId}:`, err);
-      });
+  const addSubtask = useCallback(async (taskId: string, title: string) => {
+    try {
+      const updatedTask = await api.post<ApiTask>(
+        `/tasks/${taskId}/subtasks`,
+        { title }
+      );
+      const normalized = normalizeTask(updatedTask);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? normalized : t))
+      );
+    } catch (err) {
+      console.error(`Failed to add subtask to task ${taskId}:`, err);
+    }
   }, []);
 
-  const toggleSubtask = useCallback((taskId: string, subtaskId: string) => {
-    let currentDone = false;
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const sub = t.subtasks.find((s) => s.id === subtaskId);
-        if (sub) currentDone = sub.done;
-        return {
-          ...t,
-          subtasks: t.subtasks.map((s) =>
-            s.id === subtaskId ? { ...s, done: !s.done } : s
-          ),
-        };
-      })
-    );
+  const toggleSubtask = useCallback(
+    async (taskId: string, subtaskId: string) => {
+      let currentDone = false;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId) return t;
+          const sub = t.subtasks.find((s) => s.id === subtaskId);
+          if (sub) currentDone = sub.done;
+          return {
+            ...t,
+            subtasks: t.subtasks.map((s) =>
+              s.id === subtaskId ? { ...s, done: !s.done } : s
+            ),
+          };
+        })
+      );
 
-    api
-      .patch<Task>(`/tasks/${taskId}/subtasks/${subtaskId}`, {
-        done: !currentDone,
-      })
-      .then((updatedTask) => {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? updatedTask : t))
+      try {
+        const updatedTask = await api.patch<ApiTask>(
+          `/tasks/${taskId}/subtasks/${subtaskId}`,
+          {
+            done: !currentDone,
+          }
         );
-      })
-      .catch((err) => {
+        const normalized = normalizeTask(updatedTask);
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? normalized : t))
+        );
+      } catch (err) {
         console.error(`Failed to toggle subtask ${subtaskId}:`, err);
-      });
-  }, []);
+      }
+    },
+    []
+  );
 
   const value = useMemo(
     () => ({

@@ -107,7 +107,9 @@ export default function TasksPage() {
         open={addModalStatus !== null}
         defaultStatus={addModalStatus ?? "todo"}
         onClose={() => setAddModalStatus(null)}
-        onSubmit={(title, status) => addTask({ title, status })}
+        onSubmit={async (title, status) => {
+          await addTask({ title, status });
+        }}
       />
     </>
   );

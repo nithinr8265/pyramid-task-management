@@ -33,6 +33,7 @@ export function ViewFieldsMenu({
         <div className="rounded-xl border border-border bg-surface shadow-lg p-1.5">
           <div className="flex rounded-lg bg-surface-muted p-0.5 mb-1.5">
             <button
+              type="button"
               onClick={() => onViewChange("list")}
               className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-colors ${
                 view === "list"
@@ -43,6 +44,7 @@ export function ViewFieldsMenu({
               <ListIcon size={13} /> List
             </button>
             <button
+              type="button"
               onClick={() => onViewChange("board")}
               className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-colors ${
                 view === "board"
@@ -58,10 +60,13 @@ export function ViewFieldsMenu({
             {FIELD_OPTIONS.map((f) => (
               <button
                 key={f.key}
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={fields.has(f.key)}
                 onClick={() => onToggleField(f.key)}
-                className="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm hover:bg-surface-hover"
+                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm hover:bg-surface-hover text-left"
               >
-                <Checkbox checked={fields.has(f.key)} onChange={() => onToggleField(f.key)} />
+                <Checkbox checked={fields.has(f.key)} />
                 <span>{f.label}</span>
               </button>
             ))}
