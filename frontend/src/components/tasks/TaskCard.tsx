@@ -22,9 +22,20 @@ export function TaskCard({
   const assignee = getMemberById(task.memberIds[0]);
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => router.push(`/tasks/${task.id}`)}
-      className="w-full text-left rounded-xl border border-border bg-surface p-3 hover:border-border-strong hover:shadow-sm transition-all group"
+      onKeyDown={(e) => {
+        if (
+          (e.key === "Enter" || e.key === " ") &&
+          e.target === e.currentTarget
+        ) {
+          e.preventDefault();
+          router.push(`/tasks/${task.id}`);
+        }
+      }}
+      className="w-full text-left rounded-xl border border-border bg-surface p-3 hover:border-border-strong hover:shadow-sm transition-all group cursor-pointer"
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium leading-snug">{task.title}</p>
@@ -58,6 +69,6 @@ export function TaskCard({
           />
         </div>
       )}
-    </button>
+    </div>
   );
 }
