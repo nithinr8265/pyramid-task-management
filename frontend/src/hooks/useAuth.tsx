@@ -21,7 +21,7 @@ interface AuthContextValue {
   session: Session | null;
   hydrated: boolean;
   loginAsGuest: () => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -45,27 +45,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (err) {
       console.error("Guest login failed:", err);
+      throw err;
     }
   }, [setSession]);
 
-  const loginWithGoogle = useCallback(async () => {
-    try {
-      const data = await api.post<{ accessToken: string; user: Member }>(
-        "/auth/google",
-        {
-          name: "Dexter",
-          email: "dexter@gmail.com",
-        }
-      );
-      setSession({
-        user: data.user,
-        provider: "google",
-        accessToken: data.accessToken,
-      });
-    } catch (err) {
-      console.error("Google login failed:", err);
-    }
-  }, [setSession]);
+  const loginWithGoogle = useCallback(
+    async (credential: string) => {
+      try {
+        const data = await api.post<{ accessToken: string; user: Member }>(
+          "/auth/google",
+          { credential }
+        );
+        setSession({
+          user: data.user,
+          provider: "google",
+          accessToken: data.accessToken,
+        });
+      } catch (err) {
+        console.error("Google login failed:", err);
+        throw err;
+      }
+    },
+    [setSession]
+  );
 
   const logout = useCallback(() => {
     setSession(null);
