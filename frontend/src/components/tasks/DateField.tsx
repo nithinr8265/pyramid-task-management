@@ -17,13 +17,15 @@ export function DateField({
   value,
   onChange,
   placeholder = "Set date",
+  align = "start",
 }: {
   value?: string;
   onChange: (iso: string) => void;
   placeholder?: string;
+  align?: "start" | "end";
 }) {
   return (
-    <Popover
+    <Popover align={align}
       trigger={({ toggle }) => (
         <button
           onClick={toggle}

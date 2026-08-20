@@ -15,13 +15,15 @@ const STATUS_DOT: Record<StatusId, string> = {
 export function StatusSelect({
   value,
   onChange,
+  align = "start",
 }: {
   value: StatusId;
   onChange: (s: StatusId) => void;
+  align?: "start" | "end";
 }) {
   const current = statuses.find((s) => s.id === value);
   return (
-    <Popover
+    <Popover align={align}
       trigger={({ toggle }) => (
         <button
           onClick={toggle}

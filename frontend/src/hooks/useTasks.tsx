@@ -8,8 +8,16 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Comment, Priority, StatusId, Subtask, Task, UpdateEntry } from "@/types";
+import { Comment, Priority, StatusId, Subtask, Task, TaskResource, UpdateEntry } from "@/types";
 import { api } from "@/lib/api";
+
+interface ApiResource {
+  id?: string;
+  name: string;
+  url?: string;
+  dataUrl?: string;
+  mimeType?: string;
+}
 
 interface ApiSubtask {
   id: string;
@@ -23,8 +31,9 @@ interface ApiSubtask {
 interface ApiComment {
   id: string;
   authorId: string;
-  body: string;
+  body?: string;
   createdAt?: string | Date;
+  resources?: ApiResource[];
 }
 
 interface ApiUpdate {
@@ -47,7 +56,7 @@ interface ApiTask {
   teamIds?: string[];
   startDate?: string;
   dueDate?: string;
-  resources?: { label: string; url: string }[];
+  resources?: ApiResource[];
   watcherCount?: number;
   createdAt?: string | Date;
   subtasks?: ApiSubtask[];
@@ -73,7 +82,17 @@ interface TasksContextValue {
   updateTask: (id: string, patch: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   moveTask: (id: string, status: StatusId) => void;
-  addComment: (taskId: string, body: string, authorId?: string) => void;
+  addResource: (
+    taskId: string,
+    resource: { name: string; url?: string; dataUrl?: string; mimeType?: string }
+  ) => Promise<void>;
+  deleteResource: (taskId: string, resourceId: string) => Promise<void>;
+  addComment: (
+    taskId: string,
+    body?: string,
+    authorId?: string,
+    resources?: TaskResource[]
+  ) => Promise<void>;
   addSubtask: (taskId: string, title: string) => void;
   toggleSubtask: (taskId: string, subtaskId: string) => void;
 }
@@ -112,6 +131,16 @@ function normalizeTask(t: ApiTask): Task {
       ? t.createdAt
       : new Date().toISOString();
 
+  const resources: TaskResource[] = Array.isArray(t.resources)
+    ? t.resources.map((r) => ({
+        id: r.id,
+        name: r.name || "Attachment",
+        url: r.url || undefined,
+        dataUrl: r.dataUrl || undefined,
+        mimeType: r.mimeType || undefined,
+      }))
+    : [];
+
   const subtasks: Subtask[] = Array.isArray(t.subtasks)
     ? t.subtasks.map((s) => ({
         id: s.id,
@@ -127,13 +156,22 @@ function normalizeTask(t: ApiTask): Task {
     ? t.comments.map((c) => ({
         id: c.id,
         authorId: c.authorId,
-        body: c.body,
+        body: c.body || "",
         createdAt:
           c.createdAt instanceof Date
             ? c.createdAt.toISOString()
             : typeof c.createdAt === "string"
             ? c.createdAt
             : new Date().toISOString(),
+        resources: Array.isArray(c.resources)
+          ? c.resources.map((r) => ({
+              id: r.id,
+              name: r.name || "Attachment",
+              url: r.url || undefined,
+              dataUrl: r.dataUrl || undefined,
+              mimeType: r.mimeType || undefined,
+            }))
+          : [],
       }))
     : [];
 
@@ -164,7 +202,7 @@ function normalizeTask(t: ApiTask): Task {
     teamIds: Array.isArray(t.teamIds) ? t.teamIds : undefined,
     startDate: t.startDate || undefined,
     dueDate: t.dueDate || undefined,
-    resources: Array.isArray(t.resources) ? t.resources : undefined,
+    resources,
     watcherCount: t.watcherCount ?? 0,
     createdAt: createdAtStr,
     subtasks,
@@ -256,12 +294,64 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     [updateTask]
   );
 
+  const addResource = useCallback(
+    async (
+      taskId: string,
+      resource: { name: string; url?: string; dataUrl?: string; mimeType?: string }
+    ) => {
+      const updatedTask = await api.post<ApiTask>(
+        `/tasks/${taskId}/resources`,
+        resource
+      );
+      const normalized = normalizeTask(updatedTask);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? normalized : t))
+      );
+    },
+    []
+  );
+
+  const deleteResource = useCallback(
+    async (taskId: string, resourceId: string) => {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                resources: (t.resources || []).filter((r) => r.id !== resourceId),
+              }
+            : t
+        )
+      );
+
+      try {
+        const updatedTask = await api.del<ApiTask>(
+          `/tasks/${taskId}/resources/${resourceId}`
+        );
+        if (updatedTask && updatedTask.id) {
+          const normalized = normalizeTask(updatedTask);
+          setTasks((prev) =>
+            prev.map((t) => (t.id === taskId ? normalized : t))
+          );
+        }
+      } catch (err) {
+        console.error(`Failed to delete resource ${resourceId}:`, err);
+      }
+    },
+    []
+  );
+
   const addComment = useCallback(
-    async (taskId: string, body: string) => {
+    async (
+      taskId: string,
+      body?: string,
+      _authorId?: string,
+      resources?: TaskResource[]
+    ) => {
       try {
         const updatedTask = await api.post<ApiTask>(
           `/tasks/${taskId}/comments`,
-          { body }
+          { body: body || "", resources }
         );
         const normalized = normalizeTask(updatedTask);
         setTasks((prev) =>
@@ -269,6 +359,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         );
       } catch (err) {
         console.error(`Failed to add comment to task ${taskId}:`, err);
+        throw err;
       }
     },
     []
@@ -333,6 +424,8 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       updateTask,
       deleteTask,
       moveTask,
+      addResource,
+      deleteResource,
       addComment,
       addSubtask,
       toggleSubtask,
@@ -345,6 +438,8 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       updateTask,
       deleteTask,
       moveTask,
+      addResource,
+      deleteResource,
       addComment,
       addSubtask,
       toggleSubtask,

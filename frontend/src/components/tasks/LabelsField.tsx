@@ -8,9 +8,11 @@ import { Checkbox } from "@/components/ui/Checkbox";
 export function LabelsField({
   value,
   onChange,
+  align = "start",
 }: {
   value: string[];
   onChange: (ids: string[]) => void;
+  align?: "start" | "end";
 }) {
   function toggle(id: string) {
     onChange(
@@ -39,7 +41,7 @@ export function LabelsField({
           </span>
         );
       })}
-      <Popover
+      <Popover align={align}
         trigger={({ toggle: openMenu }) => (
           <button
             onClick={openMenu}

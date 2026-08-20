@@ -1,5 +1,6 @@
 "use client";
 
+import { DragEvent, useState } from "react";
 import { GripVertical, Plus } from "lucide-react";
 import { FieldKey, StatusId, Task } from "@/types";
 import { TaskCard } from "@/components/tasks/TaskCard";
@@ -18,6 +19,10 @@ export function TaskColumn({
   fields,
   onAddTask,
   onDeleteTask,
+  onMoveTask,
+  draggedTaskId,
+  onDragStart,
+  onDragEnd,
 }: {
   statusId: StatusId;
   title: string;
@@ -25,7 +30,23 @@ export function TaskColumn({
   fields: Set<FieldKey>;
   onAddTask: () => void;
   onDeleteTask: (id: string) => void;
+  onMoveTask: (id: string, status: StatusId) => void;
+  draggedTaskId: string | null;
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
 }) {
+  const [isDropTarget, setIsDropTarget] = useState(false);
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDropTarget(false);
+    const taskId =
+      draggedTaskId ||
+      event.dataTransfer.getData("application/x-pyramid-task-id") ||
+      event.dataTransfer.getData("text/plain");
+    if (taskId) onMoveTask(taskId, statusId);
+  }
+
   return (
     <div className="w-[280px] shrink-0 flex flex-col">
       <div className="flex items-center gap-1.5 px-1 pb-2">
@@ -42,13 +63,31 @@ export function TaskColumn({
         </button>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          setIsDropTarget(true);
+        }}
+        onDragLeave={(event) => {
+          if (event.currentTarget === event.target) setIsDropTarget(false);
+        }}
+        onDrop={handleDrop}
+        className={`flex min-h-20 flex-col gap-2 rounded-xl transition-colors ${
+          isDropTarget ? "bg-accent-soft ring-1 ring-accent" : ""
+        }`}
+      >
         {tasks.map((task) => (
           <TaskCard
             key={task.id}
             task={task}
             fields={fields}
             onDelete={() => onDeleteTask(task.id)}
+            onDragStart={() => onDragStart(task.id)}
+            onDragEnd={() => {
+              setIsDropTarget(false);
+              onDragEnd();
+            }}
           />
         ))}
 

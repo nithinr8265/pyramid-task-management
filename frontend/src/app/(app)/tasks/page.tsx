@@ -19,7 +19,7 @@ import {
 const DEFAULT_FIELDS: FieldKey[] = ["priority", "members", "dueDate", "labels"];
 
 export default function TasksPage() {
-  const { tasks, addTask, deleteTask } = useTasks();
+  const { tasks, addTask, deleteTask, moveTask } = useTasks();
   const { setCollapsed } = useSidebarCollapsed();
 
   const [view, setView] = useLocalStorage<ViewMode>("pyramid:tasks-view", "board");
@@ -93,6 +93,7 @@ export default function TasksPage() {
           fields={fields}
           onAddTask={(status) => setAddModalStatus(status)}
           onDeleteTask={deleteTask}
+          onMoveTask={moveTask}
         />
       ) : (
         <TaskListView
@@ -107,9 +108,7 @@ export default function TasksPage() {
         open={addModalStatus !== null}
         defaultStatus={addModalStatus ?? "todo"}
         onClose={() => setAddModalStatus(null)}
-        onSubmit={async (title, status) => {
-          await addTask({ title, status });
-        }}
+        onSubmit={addTask}
       />
     </>
   );

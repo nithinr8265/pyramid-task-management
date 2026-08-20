@@ -59,6 +59,15 @@ type CommentEmbedded {
   authorId  String
   body      String
   createdAt DateTime @default(now())
+  resources ResourceEmbedded[]
+}
+
+type ResourceEmbedded {
+  id       String @default(cuid())
+  name     String
+  url      String?
+  dataUrl  String?
+  mimeType String?
 }
 
 type UpdateEntryEmbedded {
@@ -86,4 +95,5 @@ model Task {
   subtasks     SubtaskEmbedded[]
   comments     CommentEmbedded[]
   updates      UpdateEntryEmbedded[]
+  resources    ResourceEmbedded[]
 }

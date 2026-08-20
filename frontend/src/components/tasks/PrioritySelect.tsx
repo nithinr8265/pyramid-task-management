@@ -8,13 +8,15 @@ import { PRIORITY_META, PRIORITY_ORDER, PriorityBars } from "@/components/tasks/
 export function PrioritySelect({
   value,
   onChange,
+  align = "start",
 }: {
   value: Priority;
   onChange: (p: Priority) => void;
+  align?: "start" | "end";
 }) {
   const meta = PRIORITY_META[value];
   return (
-    <Popover
+    <Popover align={align}
       trigger={({ toggle }) => (
         <button
           onClick={toggle}

@@ -23,7 +23,7 @@ export default function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { tasks, addTask, deleteTask } = useTasks();
+  const { tasks, addTask, deleteTask, moveTask } = useTasks();
   const { getProject } = useProjects();
   const { setCollapsed } = useSidebarCollapsed();
   const project = getProject(id);
@@ -121,6 +121,7 @@ export default function ProjectDetailPage({
           fields={fields}
           onAddTask={(status) => setAddModalStatus(status)}
           onDeleteTask={deleteTask}
+          onMoveTask={moveTask}
         />
       ) : (
         <TaskListView
@@ -135,9 +136,7 @@ export default function ProjectDetailPage({
         open={addModalStatus !== null}
         defaultStatus={addModalStatus ?? "todo"}
         onClose={() => setAddModalStatus(null)}
-        onSubmit={async (title, status) => {
-          await addTask({ title, status, projectId: id });
-        }}
+        onSubmit={(input) => addTask({ ...input, projectId: id })}
       />
     </>
   );

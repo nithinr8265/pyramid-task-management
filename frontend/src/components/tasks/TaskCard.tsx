@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { DragEvent } from "react";
 import { Task, FieldKey } from "@/types";
 import { getMemberById } from "@/data/members";
 import { getLabelById } from "@/data/labels";
@@ -13,18 +14,30 @@ export function TaskCard({
   task,
   fields,
   onDelete,
+  onDragStart,
+  onDragEnd,
 }: {
   task: Task;
   fields: Set<FieldKey>;
   onDelete: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }) {
   const router = useRouter();
   const assignee = getMemberById(task.memberIds[0]);
 
   return (
     <div
+      draggable
       role="button"
       tabIndex={0}
+      onDragStart={(event: DragEvent<HTMLDivElement>) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("application/x-pyramid-task-id", task.id);
+        event.dataTransfer.setData("text/plain", task.id);
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
       onClick={() => router.push(`/tasks/${task.id}`)}
       onKeyDown={(e) => {
         if (
@@ -35,7 +48,7 @@ export function TaskCard({
           router.push(`/tasks/${task.id}`);
         }
       }}
-      className="w-full text-left rounded-xl border border-border bg-surface p-3 hover:border-border-strong hover:shadow-sm transition-all group cursor-pointer"
+      className="w-full text-left rounded-xl border border-border bg-surface p-3 hover:border-border-strong hover:shadow-sm transition-all group cursor-grab active:cursor-grabbing"
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium leading-snug">{task.title}</p>

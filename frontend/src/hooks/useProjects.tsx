@@ -37,7 +37,9 @@ function makeId(name: string) {
 function normalizeProject(project: Project): Project {
   return {
     ...project,
-    priority: project.priority.toLowerCase() as Project["priority"],
+    priority: project.priority
+      .toLowerCase()
+      .replaceAll("_", "-") as Project["priority"],
   };
 }
 

@@ -56,4 +56,8 @@ export class CreateTaskDto {
   @IsArray()
   @IsString({ each: true })
   labelIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  resources?: { id: string; name: string; url?: string; dataUrl?: string; mimeType?: string }[];
 }

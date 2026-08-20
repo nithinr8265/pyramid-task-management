@@ -27,11 +27,20 @@ export interface Label {
   name: string;
 }
 
+export interface TaskResource {
+  id?: string;
+  name: string;
+  url?: string;
+  dataUrl?: string;
+  mimeType?: string;
+}
+
 export interface Comment {
   id: string;
   authorId: string;
   body: string;
   createdAt: string; // ISO date
+  resources?: TaskResource[];
 }
 
 export interface UpdateEntry {
@@ -63,7 +72,7 @@ export interface Task {
   teamIds?: string[];
   startDate?: string; // ISO date
   dueDate?: string; // ISO date
-  resources?: { label: string; url: string }[];
+  resources?: TaskResource[];
   subtasks: Subtask[];
   comments: Comment[];
   updates: UpdateEntry[];

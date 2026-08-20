@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Priority, StatusId } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCommentDto } from "./dto/create-comment.dto";
+import { CreateResourceDto } from "./dto/create-resource.dto";
 import { CreateSubtaskDto } from "./dto/create-subtask.dto";
 import { CreateTaskDto } from "./dto/create-task.dto";
 import { TaskQueryDto } from "./dto/task-query.dto";
@@ -33,6 +34,15 @@ export class TasksService {
       dueDate: t.dueDate || undefined,
       watcherCount: t.watcherCount ?? 0,
       createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
+      resources: t.resources
+        ? t.resources.map((r: any) => ({
+            id: r.id || makeId("resource"),
+            name: r.name || "Attachment",
+            url: r.url || undefined,
+            dataUrl: r.dataUrl || undefined,
+            mimeType: r.mimeType || undefined,
+          }))
+        : [],
       subtasks: t.subtasks
         ? t.subtasks.map((s: any) => ({
             id: s.id,
@@ -47,8 +57,17 @@ export class TasksService {
         ? t.comments.map((c: any) => ({
             id: c.id,
             authorId: c.authorId,
-            body: c.body,
+            body: c.body || "",
             createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
+            resources: c.resources
+              ? c.resources.map((r: any) => ({
+                  id: r.id || makeId("resource"),
+                  name: r.name || "Attachment",
+                  url: r.url || undefined,
+                  dataUrl: r.dataUrl || undefined,
+                  mimeType: r.mimeType || undefined,
+                }))
+              : [],
           }))
         : [],
       updates: t.updates
@@ -114,6 +133,15 @@ export class TasksService {
         labelIds: dto.labelIds || [],
         dueDate: dto.dueDate,
         startDate: dto.startDate,
+        resources: dto.resources
+          ? dto.resources.map((r) => ({
+              id: r.id || makeId("resource"),
+              name: r.name || "Attachment",
+              url: r.url,
+              dataUrl: r.dataUrl,
+              mimeType: r.mimeType,
+            }))
+          : [],
         subtasks: [],
         comments: [],
         updates: [],
@@ -150,6 +178,49 @@ export class TasksService {
     await this.findOne(id);
     await this.prisma.task.delete({ where: { id } });
     return { success: true };
+  }
+
+  // Nested: Resources
+  async addResource(taskId: string, dto: CreateResourceDto) {
+    const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!existing) {
+      throw new NotFoundException(`Task with id ${taskId} not found`);
+    }
+
+    const newResource = {
+      id: makeId("resource"),
+      name: dto.name || "Attachment",
+      url: dto.url || undefined,
+      dataUrl: dto.dataUrl || undefined,
+      mimeType: dto.mimeType || undefined,
+    };
+
+    const updatedTask = await this.prisma.task.update({
+      where: { id: taskId },
+      data: {
+        resources: {
+          push: newResource,
+        },
+      },
+    });
+
+    return this.mapTask(updatedTask);
+  }
+
+  async removeResource(taskId: string, resourceId: string) {
+    const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!existing) {
+      throw new NotFoundException(`Task with id ${taskId} not found`);
+    }
+
+    const resources = (existing.resources || []).filter((r) => r.id !== resourceId);
+
+    const updatedTask = await this.prisma.task.update({
+      where: { id: taskId },
+      data: { resources },
+    });
+
+    return this.mapTask(updatedTask);
   }
 
   // Nested: Subtasks
@@ -220,8 +291,17 @@ export class TasksService {
     const newComment = {
       id: makeId("comment"),
       authorId: authorId || "guest",
-      body: dto.body,
+      body: dto.body || "",
       createdAt: new Date(),
+      resources: dto.resources
+        ? dto.resources.map((r: any) => ({
+            id: r.id || makeId("resource"),
+            name: r.name || "Attachment",
+            url: r.url || undefined,
+            dataUrl: r.dataUrl || undefined,
+            mimeType: r.mimeType || undefined,
+          }))
+        : [],
     };
 
     const updatedTask = await this.prisma.task.update({

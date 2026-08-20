@@ -1,10 +1,14 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  Check,
+  Download,
+  ExternalLink,
   Eye,
+  FileText,
   Link2,
   Lock,
   MoreHorizontal,
@@ -13,6 +17,7 @@ import {
   Plus,
   Send,
   Trash2,
+  X,
 } from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +29,8 @@ import { DateField } from "@/components/tasks/DateField";
 import { MembersField } from "@/components/tasks/MembersField";
 import { LabelsField } from "@/components/tasks/LabelsField";
 import { Popover } from "@/components/ui/Popover";
+import { AddResourceModal } from "@/components/tasks/AddResourceModal";
+import { TaskResource } from "@/types";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -36,6 +43,21 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function TaskDetailPage({
   params,
 }: {
@@ -43,14 +65,32 @@ export default function TaskDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { getTask, updateTask, deleteTask, addComment, addSubtask, toggleSubtask } =
-    useTasks();
+  const {
+    getTask,
+    updateTask,
+    deleteTask,
+    addResource,
+    deleteResource,
+    addComment,
+    addSubtask,
+    toggleSubtask,
+  } = useTasks();
   const { session } = useAuth();
   const task = getTask(id);
 
   const [comment, setComment] = useState("");
+  const [commentFile, setCommentFile] = useState<File | null>(null);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+
   const [newSubtask, setNewSubtask] = useState("");
   const [panelOpen, setPanelOpen] = useState(true);
+  const [addResourceOpen, setAddResourceOpen] = useState(false);
+
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+
+  const commentFileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!task) {
     return (
@@ -65,11 +105,76 @@ export default function TaskDetailPage({
 
   const reporter = getMemberById(task.reporterId);
 
-  function submitComment(e: React.FormEvent) {
+  async function handleCopyLink() {
+    setCopyError(null);
+    try {
+      if (navigator.clipboard && window.location.href) {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        throw new Error("Clipboard API not available");
+      }
+    } catch {
+      setCopyError("Failed to copy link");
+      setTimeout(() => setCopyError(null), 3000);
+    }
+  }
+
+  async function submitComment(e: React.FormEvent) {
     e.preventDefault();
-    if (!comment.trim() || !task) return;
-    addComment(task.id, comment.trim(), session?.user.id ?? "guest");
-    setComment("");
+    if ((!comment.trim() && !commentFile) || !task || isSubmittingComment) return;
+
+    try {
+      setIsSubmittingComment(true);
+      setCommentError(null);
+
+      let resources: TaskResource[] | undefined;
+      if (commentFile) {
+        const dataUrl = await readFileAsDataUrl(commentFile);
+        resources = [
+          {
+            name: commentFile.name,
+            dataUrl,
+            mimeType: commentFile.type || "application/octet-stream",
+          },
+        ];
+      }
+
+      await addComment(
+        task.id,
+        comment.trim(),
+        session?.user.id ?? "guest",
+        resources
+      );
+
+      setComment("");
+      setCommentFile(null);
+      if (commentFileInputRef.current) {
+        commentFileInputRef.current.value = "";
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to add comment";
+      setCommentError(message);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  }
+
+  function handleCommentFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setCommentFile(files[0]);
+      setCommentError(null);
+    }
+  }
+
+  function handleRemoveCommentFile() {
+    setCommentFile(null);
+    if (commentFileInputRef.current) {
+      commentFileInputRef.current.value = "";
+    }
   }
 
   function submitSubtask(e: React.FormEvent) {
@@ -105,15 +210,36 @@ export default function TaskDetailPage({
               <span className="flex items-center gap-1 px-1.5 py-1 rounded-md text-text-subtle text-xs">
                 <Eye size={14} /> {task.watcherCount ?? 0}
               </span>
-              <button
-                className="p-1.5 rounded-md hover:bg-surface-hover text-text-subtle"
-                title="Copy link"
-                onClick={() =>
-                  navigator.clipboard?.writeText(window.location.href)
-                }
-              >
-                <Link2 size={15} />
-              </button>
+              <div className="relative flex items-center">
+                <button
+                  className="p-1.5 rounded-md hover:bg-surface-hover text-text-subtle transition-colors"
+                  title="Copy link"
+                  onClick={handleCopyLink}
+                  aria-label="Copy task link"
+                >
+                  {copied ? (
+                    <Check size={15} className="text-emerald-500" />
+                  ) : (
+                    <Link2 size={15} />
+                  )}
+                </button>
+                {copied && (
+                  <span
+                    role="status"
+                    className="absolute -bottom-7 right-0 text-[11px] font-medium bg-surface-muted text-text border border-border px-2 py-0.5 rounded shadow-lg whitespace-nowrap z-20"
+                  >
+                    Link copied
+                  </span>
+                )}
+                {copyError && (
+                  <span
+                    role="alert"
+                    className="absolute -bottom-7 right-0 text-[11px] font-medium bg-rose-500 text-white px-2 py-0.5 rounded shadow-lg whitespace-nowrap z-20"
+                  >
+                    {copyError}
+                  </span>
+                )}
+              </div>
               <Popover
                 align="end"
                 trigger={({ toggle }) => (
@@ -182,12 +308,76 @@ export default function TaskDetailPage({
                 onChange={(ids) => updateTask(task.id, { labelIds: ids })}
               />
             </div>
-            <div className="flex items-center gap-4">
-              <span className="w-24 text-text-subtle shrink-0">Resources</span>
-              <button className="inline-flex items-center gap-1.5 text-text-subtle hover:text-text-muted">
-                <Paperclip size={13} />
-                Add document or link...
-              </button>
+
+            {/* Resources Section */}
+            <div className="flex items-start gap-4">
+              <span className="w-24 text-text-subtle shrink-0 pt-1">Resources</span>
+              <div className="flex-1 flex flex-col gap-2">
+                {task.resources && task.resources.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {task.resources.map((r) => (
+                      <div
+                        key={r.id || r.name}
+                        className="group inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border bg-surface-muted text-xs hover:border-border-strong transition-colors"
+                      >
+                        {r.dataUrl ? (
+                          <FileText size={14} className="text-text-subtle shrink-0" />
+                        ) : (
+                          <Link2 size={14} className="text-text-subtle shrink-0" />
+                        )}
+
+                        <span className="font-medium text-text max-w-[200px] truncate" title={r.name}>
+                          {r.name}
+                        </span>
+
+                        <div className="flex items-center gap-1.5 ml-1 border-l border-border pl-1.5 text-text-subtle">
+                          {r.url && (
+                            <a
+                              href={r.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-accent p-0.5"
+                              title="Open link"
+                            >
+                              <ExternalLink size={12} />
+                            </a>
+                          )}
+                          {r.dataUrl && (
+                            <a
+                              href={r.dataUrl}
+                              download={r.name}
+                              className="hover:text-accent p-0.5"
+                              title="Download file"
+                            >
+                              <Download size={12} />
+                            </a>
+                          )}
+                          {r.id && (
+                            <button
+                              type="button"
+                              onClick={() => deleteResource(task.id, r.id!)}
+                              className="hover:text-rose-500 p-0.5"
+                              title="Remove resource"
+                              aria-label={`Remove resource ${r.name}`}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setAddResourceOpen(true)}
+                  className="self-start inline-flex items-center gap-1.5 text-text-subtle hover:text-text-muted text-xs font-medium py-1"
+                >
+                  <Paperclip size={13} />
+                  Add document or link...
+                </button>
+              </div>
             </div>
           </div>
 
@@ -268,30 +458,97 @@ export default function TaskDetailPage({
                       <span className="text-sm font-medium">{author?.name ?? "Someone"}</span>
                       <span className="text-xs text-text-subtle">{timeAgo(c.createdAt)}</span>
                     </div>
-                    <p className="text-sm text-text-muted">{c.body}</p>
+                    {c.body && <p className="text-sm text-text-muted mb-2">{c.body}</p>}
+                    {c.resources && c.resources.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-1.5">
+                        {c.resources.map((r, rIdx) => (
+                          <a
+                            key={r.id || rIdx}
+                            href={r.dataUrl || r.url || "#"}
+                            download={r.name}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-surface-muted text-xs hover:border-border-strong text-text transition-colors"
+                          >
+                            <Paperclip size={12} className="text-text-subtle" />
+                            <span className="font-medium max-w-[200px] truncate">{r.name}</span>
+                            <Download size={11} className="text-text-subtle ml-1" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
+
+            {/* Comment Form */}
             <form
               onSubmit={submitComment}
-              className="mt-3 flex items-center gap-2 rounded-xl border border-border px-3 py-2"
+              className="mt-3 flex flex-col rounded-xl border border-border bg-surface overflow-hidden"
             >
-              <Paperclip size={14} className="text-text-subtle shrink-0" />
-              <input
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-1 bg-transparent outline-none text-sm placeholder:text-text-subtle"
-              />
-              <button
-                type="submit"
-                aria-label="Send comment"
-                className="text-text-subtle hover:text-accent disabled:opacity-40"
-                disabled={!comment.trim()}
-              >
-                <Send size={15} />
-              </button>
+              {commentError && (
+                <div
+                  role="alert"
+                  className="px-3 py-1.5 text-xs bg-rose-500/10 border-b border-rose-500/20 text-rose-600 dark:text-rose-400"
+                >
+                  {commentError}
+                </div>
+              )}
+
+              {/* Selected File Banner */}
+              {commentFile && (
+                <div className="flex items-center justify-between px-3 py-1.5 bg-surface-muted border-b border-border text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Paperclip size={13} className="text-text-subtle shrink-0" />
+                    <span className="truncate font-medium text-text">{commentFile.name}</span>
+                    <span className="text-[11px] text-text-subtle shrink-0">
+                      ({formatFileSize(commentFile.size)})
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCommentFile}
+                    className="text-text-subtle hover:text-rose-500 p-0.5"
+                    aria-label="Remove attached file"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 px-3 py-2">
+                <input
+                  type="file"
+                  ref={commentFileInputRef}
+                  onChange={handleCommentFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => commentFileInputRef.current?.click()}
+                  className="text-text-subtle hover:text-text p-1 rounded hover:bg-surface-hover shrink-0"
+                  title="Attach file"
+                  aria-label="Attach file to comment"
+                >
+                  <Paperclip size={15} />
+                </button>
+                <input
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  disabled={isSubmittingComment}
+                  className="flex-1 bg-transparent outline-none text-sm placeholder:text-text-subtle"
+                />
+                <button
+                  type="submit"
+                  aria-label="Send comment"
+                  className="text-text-subtle hover:text-accent disabled:opacity-40 p-1"
+                  disabled={isSubmittingComment || (!comment.trim() && !commentFile)}
+                >
+                  <Send size={15} />
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -307,6 +564,7 @@ export default function TaskDetailPage({
                   <StatusSelect
                     value={task.status}
                     onChange={(s) => updateTask(task.id, { status: s })}
+                    align="end"
                   />
                 </dd>
               </div>
@@ -316,6 +574,7 @@ export default function TaskDetailPage({
                   <PrioritySelect
                     value={task.priority}
                     onChange={(p) => updateTask(task.id, { priority: p })}
+                    align="end"
                   />
                 </dd>
               </div>
@@ -325,6 +584,7 @@ export default function TaskDetailPage({
                   <MembersField
                     value={task.memberIds}
                     onChange={(ids) => updateTask(task.id, { memberIds: ids })}
+                    align="end"
                   />
                 </dd>
               </div>
@@ -334,6 +594,7 @@ export default function TaskDetailPage({
                   <DateField
                     value={task.dueDate}
                     onChange={(iso) => updateTask(task.id, { dueDate: iso })}
+                    align="end"
                   />
                 </dd>
               </div>
@@ -343,6 +604,7 @@ export default function TaskDetailPage({
                   <LabelsField
                     value={task.labelIds}
                     onChange={(ids) => updateTask(task.id, { labelIds: ids })}
+                    align="end"
                   />
                 </dd>
               </div>
@@ -381,6 +643,15 @@ export default function TaskDetailPage({
           </aside>
         )}
       </div>
+
+      {/* Add Resource Modal */}
+      <AddResourceModal
+        open={addResourceOpen}
+        onClose={() => setAddResourceOpen(false)}
+        onSubmit={async (res) => {
+          await addResource(task.id, res);
+        }}
+      />
     </div>
   );
 }

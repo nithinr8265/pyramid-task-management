@@ -9,9 +9,11 @@ import { AvatarStack } from "@/components/ui/Avatar";
 export function MembersField({
   value,
   onChange,
+  align = "start",
 }: {
   value: string[];
   onChange: (ids: string[]) => void;
+  align?: "start" | "end";
 }) {
   function toggle(id: string) {
     onChange(
@@ -20,7 +22,7 @@ export function MembersField({
   }
 
   return (
-    <Popover
+    <Popover align={align}
       trigger={({ toggle: openMenu }) => (
         <button
           onClick={openMenu}

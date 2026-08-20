@@ -13,6 +13,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CreateCommentDto } from "./dto/create-comment.dto";
+import { CreateResourceDto } from "./dto/create-resource.dto";
 import { CreateSubtaskDto } from "./dto/create-subtask.dto";
 import { CreateTaskDto } from "./dto/create-task.dto";
 import { TaskQueryDto } from "./dto/task-query.dto";
@@ -59,6 +60,26 @@ export class TasksController {
   @Delete(":id")
   async remove(@Param("id") id: string) {
     return this.tasksService.remove(id);
+  }
+
+  // Resource routes
+  @ApiOperation({ summary: "Add a resource to a task" })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post(":id/resources")
+  async addResource(@Param("id") id: string, @Body() dto: CreateResourceDto) {
+    return this.tasksService.addResource(id, dto);
+  }
+
+  @ApiOperation({ summary: "Delete a resource from a task" })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete(":id/resources/:resourceId")
+  async removeResource(
+    @Param("id") id: string,
+    @Param("resourceId") resourceId: string
+  ) {
+    return this.tasksService.removeResource(id, resourceId);
   }
 
   // Subtask routes
