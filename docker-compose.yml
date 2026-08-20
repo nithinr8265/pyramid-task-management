@@ -60,7 +60,7 @@ services:
       JWT_SECRET: "super-secret-jwt-key-change-in-production"
       JWT_EXPIRES_IN: "7d"
       GOOGLE_CLIENT_ID: "160368229883-i7dcqojrdculqi3smi2h9tjoom5d6aoo.apps.googleusercontent.com"
-      CORS_ORIGIN: "http://localhost:3001,http://localhost:3000"
+      CORS_ORIGIN: "http://localhost:3001,http://localhost:3000,http://10.42.173.217:3001"
       PORT: 3000
     depends_on:
       mongodb:
