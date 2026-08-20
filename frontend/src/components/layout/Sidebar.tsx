@@ -45,7 +45,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
                 aria-expanded={open}
                 className="w-full flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-hover transition-colors text-left"
               >
-                <Avatar member={session?.user} size="sm" />
+                <Avatar member={session?.user} size="sm" className="!text-text" />
                 <span className="flex-1 text-sm font-medium truncate">
                   {session?.user.name ?? "Account"}
                 </span>

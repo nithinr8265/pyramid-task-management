@@ -71,7 +71,7 @@ export function AccountMenu({
       {(close) => (
         <div className="rounded-xl border border-border bg-surface shadow-lg p-1.5">
           <div className="flex items-center gap-3 px-2.5 py-2.5">
-            <Avatar member={session?.user} size="lg" />
+            <Avatar member={session?.user} size="lg" className="!text-text" />
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">
                 {session?.user.name}
