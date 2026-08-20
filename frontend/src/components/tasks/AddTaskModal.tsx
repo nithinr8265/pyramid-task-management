@@ -177,7 +177,7 @@ export function AddTaskModal({
           <legend className="block text-xs font-medium text-text-muted mb-1.5">
             Members
           </legend>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {members.map((member) => (
               <label key={member.id} className="flex items-center gap-2 text-sm">
                 <input
@@ -202,7 +202,7 @@ export function AddTaskModal({
           <legend className="block text-xs font-medium text-text-muted mb-1.5">
             Labels
           </legend>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {labels.map((label) => (
               <label key={label.id} className="flex items-center gap-2 text-sm">
                 <input

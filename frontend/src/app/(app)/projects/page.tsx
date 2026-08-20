@@ -75,11 +75,11 @@ export default function ProjectsPage() {
             <PanelLeft size={16} />
           </button>
         </div>
-        <div className="flex items-center justify-between gap-3 px-4 md:px-6 pb-4 pt-1 flex-wrap">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 px-4 md:px-6 pb-3 sm:pb-4 pt-1 flex-wrap">
           <h1 className="text-xl md:text-[22px] font-semibold">Projects</h1>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {searchOpen ? (
-              <div className="flex items-center gap-2 h-9 px-3 rounded-lg border border-border-strong bg-surface min-w-[160px] sm:min-w-[220px]">
+              <div className="flex items-center gap-2 h-9 px-2.5 sm:px-3 rounded-lg border border-border-strong bg-surface max-w-full min-w-[140px] sm:min-w-[220px]">
                 <Search size={14} className="text-text-subtle shrink-0" />
                 <input
                   autoFocus
@@ -124,7 +124,7 @@ export default function ProjectsPage() {
         />
       ) : (
         <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 pb-8">
-          <div className="rounded-xl border border-border overflow-hidden">
+          <div className="rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-surface-muted text-text-muted text-xs">

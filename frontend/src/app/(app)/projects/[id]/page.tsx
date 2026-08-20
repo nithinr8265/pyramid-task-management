@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, SearchX } from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
@@ -30,8 +30,18 @@ export default function ProjectDetailPage({
 
   const [view, setView] = useLocalStorage<ViewMode>(
     `pyramid:project-${id}-view`,
-    "list"
+    "board"
   );
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem(`pyramid:project-${id}-view`);
+      if (!saved) {
+        const isDesktopOrLaptop = window.innerWidth >= 1024;
+        setView(isDesktopOrLaptop ? "board" : "list");
+      }
+    }
+  }, [id, setView]);
   const [fieldList, setFieldList] = useLocalStorage<FieldKey[]>(
     `pyramid:project-${id}-fields`,
     DEFAULT_FIELDS
@@ -129,6 +139,7 @@ export default function ProjectDetailPage({
           fields={fields}
           onAddTask={(status) => setAddModalStatus(status)}
           onDeleteTask={deleteTask}
+          onMoveTask={moveTask}
         />
       )}
 

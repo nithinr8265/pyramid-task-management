@@ -16,12 +16,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-4 border-t border-border first:border-t-0">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 py-4 border-t border-border first:border-t-0">
       <div>
         <p className="text-sm font-medium">{label}</p>
         {hint && <p className="text-xs text-text-subtle mt-0.5">{hint}</p>}
       </div>
-      {children}
+      <div className="flex items-center justify-start sm:justify-end">{children}</div>
     </div>
   );
 }
@@ -37,7 +37,7 @@ export default function ProfileSettingsPage() {
     <div>
       <h1 className="text-2xl font-semibold mb-6">Profile</h1>
 
-      <div className="rounded-2xl border border-border px-5">
+      <div className="rounded-2xl border border-border px-4 sm:px-5">
         <Field label="Profile picture">
           <Avatar member={session?.user} size="lg" />
         </Field>
@@ -53,7 +53,7 @@ export default function ProfileSettingsPage() {
           <input
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="h-9 w-48 px-3 rounded-lg border border-border-strong bg-surface-subtle text-sm text-right outline-none focus-visible:outline-2"
+            className="h-9 w-full sm:w-48 px-3 rounded-lg border border-border-strong bg-surface-subtle text-sm text-left sm:text-right outline-none focus-visible:outline-2"
           />
         </Field>
         <Field label="Title" hint="Your job title or role">
@@ -61,7 +61,7 @@ export default function ProfileSettingsPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Designer"
-            className="h-9 w-48 px-3 rounded-lg border border-border-strong bg-surface-subtle text-sm text-right outline-none placeholder:text-text-subtle focus-visible:outline-2"
+            className="h-9 w-full sm:w-48 px-3 rounded-lg border border-border-strong bg-surface-subtle text-sm text-left sm:text-right outline-none placeholder:text-text-subtle focus-visible:outline-2"
           />
         </Field>
         <Field label="Username" hint="One word, like a nickname or first name">
@@ -69,7 +69,7 @@ export default function ProfileSettingsPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Dexuser"
-            className="h-9 w-48 px-3 rounded-lg border border-border-strong bg-surface-subtle text-sm text-right outline-none placeholder:text-text-subtle focus-visible:outline-2"
+            className="h-9 w-full sm:w-48 px-3 rounded-lg border border-border-strong bg-surface-subtle text-sm text-left sm:text-right outline-none placeholder:text-text-subtle focus-visible:outline-2"
           />
         </Field>
       </div>

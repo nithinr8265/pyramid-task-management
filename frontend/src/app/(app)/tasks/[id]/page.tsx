@@ -197,13 +197,13 @@ export default function TaskDetailPage({
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-y-auto lg:overflow-hidden">
         <div className="flex-1 min-w-0 lg:overflow-y-auto lg:scrollbar-thin px-4 md:px-8 py-6">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
             <input
               value={task.title}
               onChange={(e) => updateTask(task.id, { title: e.target.value })}
-              className="text-2xl font-semibold bg-transparent outline-none w-full"
+              className="text-xl sm:text-2xl font-semibold bg-transparent outline-none w-full min-w-0"
             />
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
               <span className="p-1.5 rounded-md text-text-subtle" title="Private">
                 <Lock size={15} />
               </span>
@@ -287,10 +287,10 @@ export default function TaskDetailPage({
             className="mt-2 w-full resize-none bg-transparent outline-none text-sm text-text-muted placeholder:text-text-subtle"
           />
 
-          <div className="mt-5 flex flex-col gap-3 text-sm">
-            <div className="flex items-center gap-4">
+          <div className="mt-5 flex flex-col gap-3.5 text-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <span className="w-24 text-text-subtle shrink-0">Properties</span>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                 <MembersField
                   value={task.memberIds}
                   onChange={(ids) => updateTask(task.id, { memberIds: ids })}
@@ -301,8 +301,8 @@ export default function TaskDetailPage({
                 />
               </div>
             </div>
-            <div className="flex items-start gap-4">
-              <span className="w-24 text-text-subtle shrink-0 pt-1">Labels</span>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+              <span className="w-24 text-text-subtle shrink-0 sm:pt-1">Labels</span>
               <LabelsField
                 value={task.labelIds}
                 onChange={(ids) => updateTask(task.id, { labelIds: ids })}
@@ -310,15 +310,15 @@ export default function TaskDetailPage({
             </div>
 
             {/* Resources Section */}
-            <div className="flex items-start gap-4">
-              <span className="w-24 text-text-subtle shrink-0 pt-1">Resources</span>
-              <div className="flex-1 flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+              <span className="w-24 text-text-subtle shrink-0 sm:pt-1">Resources</span>
+              <div className="flex-1 flex flex-col gap-2 min-w-0">
                 {task.resources && task.resources.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {task.resources.map((r) => (
                       <div
                         key={r.id || r.name}
-                        className="group inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border bg-surface-muted text-xs hover:border-border-strong transition-colors"
+                        className="group inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border bg-surface-muted text-xs hover:border-border-strong transition-colors max-w-full"
                       >
                         {r.dataUrl ? (
                           <FileText size={14} className="text-text-subtle shrink-0" />
@@ -326,7 +326,7 @@ export default function TaskDetailPage({
                           <Link2 size={14} className="text-text-subtle shrink-0" />
                         )}
 
-                        <span className="font-medium text-text max-w-[200px] truncate" title={r.name}>
+                        <span className="font-medium text-text max-w-[130px] sm:max-w-[200px] truncate" title={r.name}>
                           {r.name}
                         </span>
 
@@ -385,7 +385,7 @@ export default function TaskDetailPage({
           <div className="mt-7">
             <h3 className="text-sm font-medium mb-2">Subtasks</h3>
             {task.subtasks.length > 0 && (
-              <div className="rounded-xl border border-border overflow-hidden mb-2">
+              <div className="rounded-xl border border-border overflow-x-auto mb-2">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-muted text-text-muted text-xs">

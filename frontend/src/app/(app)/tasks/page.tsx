@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SearchX } from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
@@ -23,6 +23,16 @@ export default function TasksPage() {
   const { setCollapsed } = useSidebarCollapsed();
 
   const [view, setView] = useLocalStorage<ViewMode>("pyramid:tasks-view", "board");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem("pyramid:tasks-view");
+      if (!saved) {
+        const isDesktopOrLaptop = window.innerWidth >= 1024;
+        setView(isDesktopOrLaptop ? "board" : "list");
+      }
+    }
+  }, [setView]);
   const [fieldList, setFieldList] = useLocalStorage<FieldKey[]>(
     "pyramid:tasks-fields",
     DEFAULT_FIELDS
@@ -101,6 +111,7 @@ export default function TasksPage() {
           fields={fields}
           onAddTask={(status) => setAddModalStatus(status)}
           onDeleteTask={deleteTask}
+          onMoveTask={moveTask}
         />
       )}
 

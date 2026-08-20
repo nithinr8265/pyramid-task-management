@@ -39,17 +39,27 @@ function MenuItem({
     >
       <button
         type="button"
-        onClick={onClick}
+        onClick={() => {
+          if (submenu) setSubOpen((o) => !o);
+          if (onClick) onClick();
+        }}
         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors hover:bg-surface-hover ${
           danger ? "text-red-500" : "text-text"
         }`}
       >
         <span className="text-text-muted shrink-0">{icon}</span>
         <span className="flex-1 text-left">{label}</span>
-        {submenu && <ChevronRight size={14} className="text-text-subtle" />}
+        {submenu && (
+          <ChevronRight
+            size={14}
+            className={`text-text-subtle transition-transform ${
+              subOpen ? "rotate-90 sm:rotate-0" : ""
+            }`}
+          />
+        )}
       </button>
       {submenu && subOpen && (
-        <div className="absolute left-full top-0 ml-1 w-44 rounded-lg border border-border bg-surface shadow-lg p-1.5 popover-in">
+        <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1 w-full sm:w-44 rounded-lg border border-border bg-surface shadow-lg p-1.5 popover-in mt-1 sm:mt-0">
           {submenu}
         </div>
       )}

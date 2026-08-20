@@ -25,7 +25,7 @@ export function Popover({
       {open && (
         <div
           role="menu"
-          className={`absolute z-40 mt-1.5 popover-in ${
+          className={`absolute z-40 mt-1.5 max-w-[calc(100vw-1.5rem)] popover-in ${
             align === "end" ? "right-0" : "left-0"
           } ${className}`}
         >

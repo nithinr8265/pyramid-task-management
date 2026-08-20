@@ -20,6 +20,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (hydrated && !session) router.replace("/login");
   }, [hydrated, session, router]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      const saved = window.localStorage.getItem(STORAGE_KEYS.sidebarCollapsed);
+      if (saved === null) {
+        setCollapsed(true);
+      }
+    }
+  }, [setCollapsed]);
+
   if (!hydrated || !session) {
     return <div className="flex-1 bg-surface" />;
   }

@@ -27,7 +27,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 sm:p-4"
       onClick={onClose}
     >
       <div
@@ -35,9 +35,9 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-border bg-surface shadow-xl modal-in"
+        className="w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl border border-border bg-surface shadow-xl modal-in overflow-hidden"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border shrink-0">
           <h2 className="text-sm font-semibold">{title}</h2>
           <button
             onClick={onClose}
@@ -47,7 +47,7 @@ export function Modal({
             <X size={16} />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5 overflow-y-auto scrollbar-thin flex-1 min-h-0">{children}</div>
       </div>
     </div>
   );

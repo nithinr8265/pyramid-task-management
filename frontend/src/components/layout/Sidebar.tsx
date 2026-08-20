@@ -36,7 +36,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         onClick={() => setCollapsed(true)}
         aria-hidden="true"
       />
-      <aside className="fixed inset-y-0 left-0 z-40 w-[240px] shrink-0 h-full border-r border-border bg-surface flex flex-col md:static md:z-auto">
+      <aside className="fixed inset-y-0 left-0 z-40 w-[240px] max-w-[80vw] shrink-0 h-full border-r border-border bg-surface flex flex-col md:static md:z-auto">
         <div className="p-3">
           <AccountMenu
             trigger={({ open, toggle }) => (

@@ -192,7 +192,7 @@ export default function LoginPage() {
             <Logo />
           </div>
 
-          <div className="w-full rounded-2xl border border-border bg-surface p-8 shadow-sm">
+          <div className="w-full rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-sm">
             <h1 className="text-xl font-semibold text-center text-text">
               Let&apos;s get back on track
             </h1>
