@@ -10,6 +10,26 @@ function makeId(name: string) {
     .slice(-5)}`;
 }
 
+function getUserProjectFilter(userId?: string) {
+  if (!userId || userId === "guest" || userId === "admin") {
+    return {
+      leadId: { in: ["guest", "admin", "cn", "designer", "qa", "security"] },
+    };
+  }
+  return {
+    leadId: userId,
+  };
+}
+
+function isProjectAccessible(project: any, userId?: string): boolean {
+  if (!userId || userId === "guest" || userId === "admin") {
+    return ["guest", "admin", "cn", "designer", "qa", "security"].includes(
+      project.leadId
+    );
+  }
+  return project.leadId === userId;
+}
+
 @Injectable()
 export class ProjectsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -24,16 +44,17 @@ export class ProjectsService {
     };
   }
 
-  async findAll() {
-    const projects = await this.prisma.project.findMany();
+  async findAll(userId?: string) {
+    const where = getUserProjectFilter(userId);
+    const projects = await this.prisma.project.findMany({ where });
     return projects.map((p) => this.mapProject(p));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const project = await this.prisma.project.findUnique({
       where: { id },
     });
-    if (!project) {
+    if (!project || !isProjectAccessible(project, userId)) {
       throw new NotFoundException(`Project with id ${id} not found`);
     }
     return this.mapProject(project);
@@ -41,11 +62,7 @@ export class ProjectsService {
 
   async create(dto: CreateProjectDto, userId?: string) {
     const id = makeId(dto.name);
-    const leadId = dto.leadId || userId || "admin";
-
-    // Ensure lead user exists or fallback to admin/guest
-    const leadUser = await this.prisma.user.findUnique({ where: { id: leadId } });
-    const finalLeadId = leadUser ? leadId : "admin";
+    const finalLeadId = userId || "guest";
 
     const project = await this.prisma.project.create({
       data: {
@@ -60,23 +77,25 @@ export class ProjectsService {
     return this.mapProject(project);
   }
 
-  async update(id: string, dto: UpdateProjectDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateProjectDto, userId?: string) {
+    await this.findOne(id, userId);
+
+    const data: any = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.priority !== undefined) data.priority = dto.priority;
+    if (dto.leadId !== undefined) data.leadId = dto.leadId;
+    if (dto.dueDate !== undefined) data.dueDate = dto.dueDate;
+
     const project = await this.prisma.project.update({
       where: { id },
-      data: {
-        ...(dto.name && { name: dto.name }),
-        ...(dto.priority && { priority: dto.priority }),
-        ...(dto.leadId && { leadId: dto.leadId }),
-        ...(dto.dueDate !== undefined && { dueDate: dto.dueDate }),
-      },
+      data,
     });
 
     return this.mapProject(project);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, userId?: string) {
+    await this.findOne(id, userId);
     await this.prisma.project.delete({ where: { id } });
     return { success: true };
   }

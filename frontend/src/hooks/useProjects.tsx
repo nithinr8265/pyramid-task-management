@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { Project } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 
 interface ProjectsContextValue {
@@ -48,17 +49,23 @@ export function ProjectsProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { session } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [hydrated, setHydrated] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
 
+    if (!session?.accessToken) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
     api
       .get<Project[]>("/projects")
       .then((data) => {
-        if (isMounted) {
-          // Convert backend priority values to frontend format
+        if (isMounted && Array.isArray(data)) {
           setProjects(data.map(normalizeProject));
         }
       })
@@ -74,11 +81,16 @@ export function ProjectsProvider({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [session?.accessToken]);
+
+  const activeProjects = useMemo(
+    () => (session?.accessToken ? projects : []),
+    [session?.accessToken, projects]
+  );
 
   const getProject = useCallback(
-    (id: string) => projects.find((p) => p.id === id),
-    [projects]
+    (id: string) => activeProjects.find((p) => p.id === id),
+    [activeProjects]
   );
 
   const addProject = useCallback((name: string) => {
@@ -114,12 +126,12 @@ export function ProjectsProvider({
 
   const value = useMemo(
     () => ({
-      projects,
+      projects: activeProjects,
       hydrated,
       getProject,
       addProject,
     }),
-    [projects, hydrated, getProject, addProject]
+    [activeProjects, hydrated, getProject, addProject]
   );
 
   return (

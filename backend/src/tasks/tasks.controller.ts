@@ -22,91 +22,91 @@ import { UpdateTaskDto } from "./dto/update-task.dto";
 import { TasksService } from "./tasks.service";
 
 @ApiTags("tasks")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller("tasks")
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @ApiOperation({ summary: "Get all tasks (with filters search, status, projectId)" })
   @Get()
-  async findAll(@Query() query: TaskQueryDto) {
-    return this.tasksService.findAll(query);
+  async findAll(@Query() query: TaskQueryDto, @Req() req: any) {
+    return this.tasksService.findAll(query, req.user?.id);
   }
 
   @ApiOperation({ summary: "Get task by ID" })
   @Get(":id")
-  async findOne(@Param("id") id: string) {
-    return this.tasksService.findOne(id);
+  async findOne(@Param("id") id: string, @Req() req: any) {
+    return this.tasksService.findOne(id, req.user?.id);
   }
 
   @ApiOperation({ summary: "Create task" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() dto: CreateTaskDto, @Req() req: any) {
     return this.tasksService.create(dto, req.user?.id);
   }
 
   @ApiOperation({ summary: "Update task" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() dto: UpdateTaskDto) {
-    return this.tasksService.update(id, dto);
+  async update(
+    @Param("id") id: string,
+    @Body() dto: UpdateTaskDto,
+    @Req() req: any
+  ) {
+    return this.tasksService.update(id, dto, req.user?.id);
   }
 
   @ApiOperation({ summary: "Delete task" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Delete(":id")
-  async remove(@Param("id") id: string) {
-    return this.tasksService.remove(id);
+  async remove(@Param("id") id: string, @Req() req: any) {
+    return this.tasksService.remove(id, req.user?.id);
   }
 
   // Resource routes
   @ApiOperation({ summary: "Add a resource to a task" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post(":id/resources")
-  async addResource(@Param("id") id: string, @Body() dto: CreateResourceDto) {
-    return this.tasksService.addResource(id, dto);
+  async addResource(
+    @Param("id") id: string,
+    @Body() dto: CreateResourceDto,
+    @Req() req: any
+  ) {
+    return this.tasksService.addResource(id, dto, req.user?.id);
   }
 
   @ApiOperation({ summary: "Delete a resource from a task" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Delete(":id/resources/:resourceId")
   async removeResource(
     @Param("id") id: string,
-    @Param("resourceId") resourceId: string
+    @Param("resourceId") resourceId: string,
+    @Req() req: any
   ) {
-    return this.tasksService.removeResource(id, resourceId);
+    return this.tasksService.removeResource(id, resourceId, req.user?.id);
   }
 
   // Subtask routes
   @ApiOperation({ summary: "Add a subtask to a task" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post(":id/subtasks")
-  async addSubtask(@Param("id") id: string, @Body() dto: CreateSubtaskDto) {
-    return this.tasksService.addSubtask(id, dto);
+  async addSubtask(
+    @Param("id") id: string,
+    @Body() dto: CreateSubtaskDto,
+    @Req() req: any
+  ) {
+    return this.tasksService.addSubtask(id, dto, req.user?.id);
   }
 
   @ApiOperation({ summary: "Update a subtask" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Patch(":id/subtasks/:subtaskId")
   async updateSubtask(
     @Param("id") id: string,
     @Param("subtaskId") subtaskId: string,
-    @Body() dto: UpdateSubtaskDto
+    @Body() dto: UpdateSubtaskDto,
+    @Req() req: any
   ) {
-    return this.tasksService.updateSubtask(id, subtaskId, dto);
+    return this.tasksService.updateSubtask(id, subtaskId, dto, req.user?.id);
   }
 
   // Comment route
   @ApiOperation({ summary: "Add a comment to a task" })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post(":id/comments")
   async addComment(
     @Param("id") id: string,

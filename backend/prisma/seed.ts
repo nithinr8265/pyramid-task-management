@@ -79,7 +79,7 @@ const projects = [
     id: "design-homepage",
     name: "Design Homepage",
     priority: Priority.HIGH,
-    leadId: "dexter",
+    leadId: "admin",
     dueDate: "2026-09-12",
   },
   {

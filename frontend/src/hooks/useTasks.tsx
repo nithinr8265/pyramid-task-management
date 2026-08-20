@@ -6,9 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Comment, Priority, StatusId, Subtask, Task, TaskResource, UpdateEntry } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 
 interface ApiResource {
@@ -212,11 +214,24 @@ function normalizeTask(t: ApiTask): Task {
 }
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
+  const { session } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hydrated, setHydrated] = useState<boolean>(false);
+  const tasksRef = useRef<Task[]>(tasks);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   useEffect(() => {
     let isMounted = true;
+
+    if (!session?.accessToken) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
     api
       .get<ApiTask[]>("/tasks")
       .then((data) => {
@@ -236,11 +251,16 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [session?.accessToken]);
+
+  const activeTasks = useMemo(
+    () => (session?.accessToken ? tasks : []),
+    [session?.accessToken, tasks]
+  );
 
   const getTask = useCallback(
-    (id: string) => tasks.find((t) => t.id === id),
-    [tasks]
+    (id: string) => activeTasks.find((t) => t.id === id),
+    [activeTasks]
   );
 
   const addTask = useCallback(
@@ -382,16 +402,18 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
 
   const toggleSubtask = useCallback(
     async (taskId: string, subtaskId: string) => {
-      let currentDone = false;
+      const currentTask = tasksRef.current.find((t) => t.id === taskId);
+      const currentSub = currentTask?.subtasks.find((s) => s.id === subtaskId);
+      const newDone = currentSub ? !currentSub.done : true;
+
+      // Optimistic update
       setTasks((prev) =>
         prev.map((t) => {
           if (t.id !== taskId) return t;
-          const sub = t.subtasks.find((s) => s.id === subtaskId);
-          if (sub) currentDone = sub.done;
           return {
             ...t,
             subtasks: t.subtasks.map((s) =>
-              s.id === subtaskId ? { ...s, done: !s.done } : s
+              s.id === subtaskId ? { ...s, done: newDone } : s
             ),
           };
         })
@@ -401,7 +423,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         const updatedTask = await api.patch<ApiTask>(
           `/tasks/${taskId}/subtasks/${subtaskId}`,
           {
-            done: !currentDone,
+            done: newDone,
           }
         );
         const normalized = normalizeTask(updatedTask);
@@ -410,6 +432,18 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         );
       } catch (err) {
         console.error(`Failed to toggle subtask ${subtaskId}:`, err);
+        // Revert on error
+        setTasks((prev) =>
+          prev.map((t) => {
+            if (t.id !== taskId) return t;
+            return {
+              ...t,
+              subtasks: t.subtasks.map((s) =>
+                s.id === subtaskId ? { ...s, done: !newDone } : s
+              ),
+            };
+          })
+        );
       }
     },
     []
@@ -417,7 +451,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      tasks,
+      tasks: activeTasks,
       hydrated,
       getTask,
       addTask,
@@ -431,7 +465,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       toggleSubtask,
     }),
     [
-      tasks,
+      activeTasks,
       hydrated,
       getTask,
       addTask,

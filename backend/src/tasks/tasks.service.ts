@@ -15,6 +15,42 @@ function makeId(title: string) {
     .slice(-5)}`;
 }
 
+function getUserTaskFilter(userId?: string) {
+  if (!userId || userId === "guest" || userId === "admin") {
+    return {
+      OR: [
+        { reporterId: { in: ["guest", "admin"] } },
+        { reporterId: null },
+        { memberIds: { has: "guest" } },
+        { memberIds: { has: "admin" } },
+      ],
+    };
+  }
+  return {
+    OR: [
+      { reporterId: userId },
+      { memberIds: { has: userId } },
+    ],
+  };
+}
+
+function isTaskAccessible(task: any, userId?: string): boolean {
+  if (!userId || userId === "guest" || userId === "admin") {
+    return (
+      task.reporterId === "guest" ||
+      task.reporterId === "admin" ||
+      task.reporterId === null ||
+      task.reporterId === undefined ||
+      (Array.isArray(task.memberIds) &&
+        (task.memberIds.includes("guest") || task.memberIds.includes("admin")))
+    );
+  }
+  return (
+    task.reporterId === userId ||
+    (Array.isArray(task.memberIds) && task.memberIds.includes(userId))
+  );
+}
+
 @Injectable()
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
@@ -81,22 +117,28 @@ export class TasksService {
     };
   }
 
-  async findAll(query: TaskQueryDto) {
-    const where: any = {};
+  async findAll(query: TaskQueryDto, userId?: string) {
+    const userFilter = getUserTaskFilter(userId);
+
+    const where: any = {
+      AND: [userFilter],
+    };
 
     if (query.projectId) {
-      where.projectId = query.projectId;
+      where.AND.push({ projectId: query.projectId });
     }
 
     if (query.status) {
-      where.status = query.status;
+      where.AND.push({ status: query.status });
     }
 
     if (query.search) {
-      where.OR = [
-        { title: { contains: query.search, mode: "insensitive" } },
-        { description: { contains: query.search, mode: "insensitive" } },
-      ];
+      where.AND.push({
+        OR: [
+          { title: { contains: query.search, mode: "insensitive" } },
+          { description: { contains: query.search, mode: "insensitive" } },
+        ],
+      });
     }
 
     const tasks = await this.prisma.task.findMany({
@@ -107,11 +149,11 @@ export class TasksService {
     return tasks.map((t) => this.mapTask(t));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const task = await this.prisma.task.findUnique({
       where: { id },
     });
-    if (!task) {
+    if (!task || !isTaskAccessible(task, userId)) {
       throw new NotFoundException(`Task with id ${id} not found`);
     }
     return this.mapTask(task);
@@ -119,6 +161,7 @@ export class TasksService {
 
   async create(dto: CreateTaskDto, reporterId?: string) {
     const id = makeId(dto.title);
+    const finalReporterId = reporterId || "guest";
 
     const task = await this.prisma.task.create({
       data: {
@@ -129,7 +172,7 @@ export class TasksService {
         status: dto.status || StatusId.TODO,
         priority: dto.priority || Priority.NO_PRIORITY,
         memberIds: dto.memberIds || [],
-        reporterId: reporterId || "admin",
+        reporterId: finalReporterId,
         labelIds: dto.labelIds || [],
         dueDate: dto.dueDate,
         startDate: dto.startDate,
@@ -151,8 +194,8 @@ export class TasksService {
     return this.mapTask(task);
   }
 
-  async update(id: string, dto: UpdateTaskDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateTaskDto, userId?: string) {
+    await this.findOne(id, userId);
 
     const data: any = {};
     if (dto.title !== undefined) data.title = dto.title;
@@ -174,18 +217,15 @@ export class TasksService {
     return this.mapTask(task);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, userId?: string) {
+    await this.findOne(id, userId);
     await this.prisma.task.delete({ where: { id } });
     return { success: true };
   }
 
   // Nested: Resources
-  async addResource(taskId: string, dto: CreateResourceDto) {
-    const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!existing) {
-      throw new NotFoundException(`Task with id ${taskId} not found`);
-    }
+  async addResource(taskId: string, dto: CreateResourceDto, userId?: string) {
+    await this.findOne(taskId, userId);
 
     const newResource = {
       id: makeId("resource"),
@@ -207,13 +247,16 @@ export class TasksService {
     return this.mapTask(updatedTask);
   }
 
-  async removeResource(taskId: string, resourceId: string) {
-    const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!existing) {
-      throw new NotFoundException(`Task with id ${taskId} not found`);
-    }
+  async removeResource(
+    taskId: string,
+    resourceId: string,
+    userId?: string
+  ) {
+    const existing = await this.findOne(taskId, userId);
 
-    const resources = (existing.resources || []).filter((r) => r.id !== resourceId);
+    const resources = (existing.resources || []).filter(
+      (r: any) => r.id !== resourceId
+    );
 
     const updatedTask = await this.prisma.task.update({
       where: { id: taskId },
@@ -224,11 +267,8 @@ export class TasksService {
   }
 
   // Nested: Subtasks
-  async addSubtask(taskId: string, dto: CreateSubtaskDto) {
-    const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!existing) {
-      throw new NotFoundException(`Task with id ${taskId} not found`);
-    }
+  async addSubtask(taskId: string, dto: CreateSubtaskDto, userId?: string) {
+    await this.findOne(taskId, userId);
 
     const newSubtask = {
       id: makeId("subtask"),
@@ -254,14 +294,18 @@ export class TasksService {
   async updateSubtask(
     taskId: string,
     subtaskId: string,
-    dto: UpdateSubtaskDto
+    dto: UpdateSubtaskDto,
+    userId?: string
   ) {
-    const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!existing) {
+    const existingTask = await this.prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!existingTask || !isTaskAccessible(existingTask, userId)) {
       throw new NotFoundException(`Task with id ${taskId} not found`);
     }
 
-    const subtasks = existing.subtasks.map((s) => {
+    const subtasks = existingTask.subtasks.map((s) => {
       if (s.id !== subtaskId) return s;
       return {
         ...s,
@@ -282,15 +326,13 @@ export class TasksService {
   }
 
   // Nested: Comments
-  async addComment(taskId: string, dto: CreateCommentDto, authorId: string) {
-    const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!existing) {
-      throw new NotFoundException(`Task with id ${taskId} not found`);
-    }
+  async addComment(taskId: string, dto: CreateCommentDto, authorId?: string) {
+    const currentUserId = authorId || "guest";
+    await this.findOne(taskId, currentUserId);
 
     const newComment = {
       id: makeId("comment"),
-      authorId: authorId || "guest",
+      authorId: currentUserId,
       body: dto.body || "",
       createdAt: new Date(),
       resources: dto.resources
