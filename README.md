@@ -1,107 +1,165 @@
-# Pyramid — Task Management System (Full Stack)
+# Pyramid — Task Management System
 
-A modern full-stack Task Management System built with a **Next.js 16 App Router** frontend and a **NestJS + MongoDB + Prisma ORM** REST API backend.
+A modern full-stack task management application for organizing projects, tasks, subtasks, comments, assignments, labels, and activity updates.
 
----
+Pyramid is built with **Next.js 16** on the frontend and **NestJS + MongoDB + Prisma** on the backend, with JWT-based authentication and Google Sign-In.
 
-## 💡 Database Choice: MongoDB Tradeoff
+## ✨ Features
 
-**Why MongoDB instead of PostgreSQL?**
-MongoDB was selected alongside Prisma ORM using Prisma's MongoDB provider. Tasks in Pyramid contain rich nested entities (`subtasks`, `comments`, and `updates`). 
+- 🔐 Guest authentication and Google Sign-In
+- 📁 Project management
+- ✅ Task creation, editing, deletion, and status updates
+- 📋 Subtask management
+- 💬 Task comments
+- 👥 Member and assignee management
+- 🏷️ Labels and priorities
+- 🔎 Task filtering and search
+- 📅 Task dates and project organization
+- 🎨 Theme and color customization
+- 📱 Responsive desktop and mobile UI
+- 🔒 JWT-protected API operations
+- 📚 Swagger/OpenAPI API documentation
+- 🩺 Health-check endpoint
 
-- **Benefits**:
-  - **Embedded Documents & Arrays**: Subtasks, comments, and activity updates are stored as native embedded document arrays (`type SubtaskEmbedded`, etc.), and member/label assignments are stored as native string arrays (`memberIds String[]`). This matches `src/types/index.ts` 1-to-1 without multi-table SQL joins or junction tables.
-  - **Atomic Operations**: Updating subtask status, pushing new comments, or appending activity logs are atomic single-document updates.
-  - **Performance**: High performance for task board queries and detail views.
-- **Tradeoff**:
-  - Requires MongoDB 7 replica set mode (e.g. Atlas or Docker single-node replica set `rs0`) for Prisma transactions.
-  - Relational cascade deletes are handled at the application service level rather than database foreign key constraints.
+## 🌐 Live Application
 
----
+**Frontend:** https://pyramid-task-management-1wx8.onrender.com
 
-## 🔐 Google Sign-In Setup
+**Backend API:** https://pyramid-eje3.onrender.com
 
-Pyramid supports real Google Sign-In via official **Google Identity Services (GIS)** with popup account selection and cryptographic ID token verification on the NestJS backend.
+**API Health Check:** https://pyramid-eje3.onrender.com/health
 
-### 1. Create Google OAuth Web Client ID
-1. Navigate to the [Google Cloud Console Credentials page](https://console.cloud.google.com/apis/credentials).
-2. Click **Create Credentials** -> **OAuth Client ID**.
-3. Set Application Type to **Web application**.
-4. Under **Authorized JavaScript origins**, add your local frontend URL:
-   - `http://localhost:3001` (and `http://localhost:3000` if running on port 3000).
-5. Copy the generated **Client ID** (`...apps.googleusercontent.com`).
+**Swagger API Docs:** https://pyramid-eje3.onrender.com/api/docs
 
-### 2. Configure Environment Variables
+> Free Render services may take some time to wake up after inactivity.
 
-**Frontend (`frontend/.env.local`)**:
-```bash
-NEXT_PUBLIC_API_URL="http://localhost:3000"
-NEXT_PUBLIC_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+## 🏗️ Architecture
+
+```text
+┌──────────────────────────────┐
+│        Next.js Frontend      │
+│  Next.js 16 + React + TS     │
+│  Tailwind CSS + GIS          │
+└──────────────┬───────────────┘
+               │ REST API
+               │ JWT / Google ID Token
+               ▼
+┌──────────────────────────────┐
+│         NestJS Backend       │
+│ Auth / Projects / Tasks      │
+│ Users / Health               │
+└──────────────┬───────────────┘
+               │ Prisma ORM
+               ▼
+┌──────────────────────────────┐
+│       MongoDB / Atlas        │
+└──────────────────────────────┘
 ```
 
-**Backend (`backend/.env`)**:
-```bash
-DATABASE_URL="mongodb://root:examplepassword@localhost:27017/pyramid?authSource=admin&replicaSet=rs0"
-JWT_SECRET="super-secret-jwt-key-change-in-production"
-JWT_EXPIRES_IN="7d"
-GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-CORS_ORIGIN="http://localhost:3001,http://localhost:3000"
-PORT=3000
+## 🛠️ Tech Stack
+
+### Frontend
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Lucide React
+- Google Identity Services
+- Custom typed API client
+
+### Backend
+
+- NestJS 10
+- TypeScript
+- MongoDB
+- Prisma ORM
+- JWT / Passport
+- Google Auth Library
+- class-validator
+- class-transformer
+- Swagger / OpenAPI
+
+### Development & Deployment
+
+- Docker / Docker Compose
+- MongoDB Atlas
+- Git & GitHub
+- Render
+
+## 📁 Project Structure
+
+```text
+pyramid/
+├── frontend/
+│   ├── src/
+│   │   ├── app/              # Next.js App Router pages
+│   │   ├── components/       # UI and feature components
+│   │   ├── hooks/            # Authentication and data hooks
+│   │   ├── lib/              # API client and storage utilities
+│   │   ├── types/            # TypeScript domain types
+│   │   └── data/             # Initial application data
+│   ├── .env.example
+│   └── package.json
+│
+├── backend/
+│   ├── prisma/
+│   │   ├── schema.prisma     # MongoDB Prisma schema
+│   │   └── seed.ts           # Database seed
+│   ├── src/
+│   │   ├── auth/             # Authentication
+│   │   ├── users/            # User/member management
+│   │   ├── projects/         # Project CRUD
+│   │   ├── tasks/            # Task CRUD and nested operations
+│   │   ├── health/           # Health check
+│   │   ├── common/           # Shared backend utilities
+│   │   └── prisma/           # Prisma service/module
+│   ├── Dockerfile
+│   └── package.json
+│
+├── docker-compose.yml
+├── README.md
+└── .gitignore
 ```
 
-### 3. Run MongoDB, Backend, and Frontend
+## 🚀 Getting Started
 
-**Start MongoDB**:
+### Prerequisites
+
+- Node.js 20+
+- npm
+- Docker Desktop
+- MongoDB 7 or MongoDB Atlas
+- Google Cloud project (if Google Sign-In is required)
+
+### 1. Clone the repository
+
 ```bash
-docker compose up -d mongodb
+git clone https://github.com/nithinr8265/pyramid-task-management.git
+cd pyramid-task-management
 ```
 
-**Start NestJS Backend**:
-```bash
-cd backend
-npm run start:dev
-```
-
-**Start Next.js Frontend**:
-```bash
-cd frontend
-npm run dev
-```
-
----
-
-## 🚀 Tech Stack
-
-### Frontend (`/frontend`)
-- **Framework**: Next.js 16 (App Router) + React 19 + TypeScript
-- **Authentication**: Google Identity Services (GIS) Web SDK + Guest Login
-- **Styling**: Tailwind CSS v4
-- **Icons**: Lucide React
-- **API Integration**: Custom typed fetch client (`src/lib/api.ts`) connected to NestJS API
-
-### Backend (`/backend`)
-- **Framework**: NestJS 10 + TypeScript
-- **Database & ORM**: MongoDB + Prisma ORM
-- **Authentication**: `google-auth-library` ID Token Verification + Passport JWT
-- **Validation**: `class-validator` + `class-transformer` (Global `ValidationPipe` with whitelist & transform enabled)
-- **API Docs**: OpenAPI / Swagger at `/api/docs`
-- **Error Handling**: Global `HttpExceptionFilter` for uniform error JSON responses
-
----
-
-## ⚡ Quick Start with Docker Compose
-
-Run the entire backend stack (MongoDB 7 Replica Set + NestJS API) with a single command:
+### 2. Start the backend
 
 ```bash
 docker compose up --build
 ```
 
-- **NestJS API**: [http://localhost:3000](http://localhost:3000)
-- **Swagger Docs**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
-- **MongoDB**: `localhost:27017` (Replica set `rs0` automatically initialized)
+Backend:
 
-Then start the frontend:
+```text
+http://localhost:3000
+```
+
+Swagger:
+
+```text
+http://localhost:3000/api/docs
+```
+
+### 3. Start the frontend
+
+Open another terminal:
 
 ```bash
 cd frontend
@@ -109,130 +167,240 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) or [http://localhost:3000](http://localhost:3000).
-
----
-
-## 📁 Repository Structure
+The frontend normally runs on:
 
 ```text
-pyramid/
-├── docker-compose.yml
-├── README.md
-├── frontend/
-│   ├── src/
-│   │   ├── app/            # Next.js App Router pages
-│   │   ├── components/     # UI, Task & Project components
-│   │   ├── hooks/          # useAuth, useTasks, useProjects
-│   │   ├── lib/            # api.ts client & storage helpers
-│   │   ├── types/          # TypeScript domain interfaces
-│   │   └── data/           # Initial mock data for seeding
-│   ├── .env.example
-│   └── package.json
-└── backend/
-    ├── prisma/
-    │   ├── schema.prisma   # MongoDB Prisma schema with embedded types
-    │   └── seed.ts         # Seeder for members, labels, projects, tasks
-    ├── src/
-    │   ├── auth/           # AuthModule (/auth/guest, /auth/google, /auth/me)
-    │   ├── users/          # UsersModule (/users)
-    │   ├── projects/       # ProjectsModule (/projects CRUD)
-    │   ├── tasks/          # TasksModule (/tasks CRUD, subtasks, comments)
-    │   ├── health/         # HealthModule (/health)
-    │   ├── common/         # Global HttpExceptionFilter
-    │   └── prisma/         # PrismaService & PrismaModule
-    ├── Dockerfile          # Multi-stage production build
-    ├── .env.example
-    └── package.json
+http://localhost:3001
 ```
 
----
+## ⚙️ Environment Variables
 
-## 📡 API Endpoints
+### Frontend
 
-All mutating endpoints (`POST`, `PATCH`, `DELETE`) require a Bearer Token in `Authorization` header: `Authorization: Bearer <token>`.
+Create:
 
-### Health & Docs
-- `GET /health` — Deployment health check (returns `{ status: "ok" }`)
-- `GET /api/docs` — Interactive OpenAPI / Swagger UI
+```text
+frontend/.env.local
+```
 
-### Authentication (`/auth`)
-- `POST /auth/guest` — Authenticate as a guest user (returns `{ accessToken, user }`)
-- `POST /auth/google` — Authenticate with verified Google ID token (`{ credential }`)
-- `GET /auth/me` — Get current authenticated user details (JWT-guarded)
+Add:
 
-### Members & Users (`/users`)
-- `GET /users` — List members for task/project assignment pickers
+```env
+NEXT_PUBLIC_API_URL="http://localhost:3000"
+NEXT_PUBLIC_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+```
 
-### Projects (`/projects`)
-- `GET /projects` — List all projects
-- `GET /projects/:id` — Get project details by ID
-- `POST /projects` — Create new project (JWT-guarded)
-- `PATCH /projects/:id` — Partial update project (JWT-guarded)
-- `DELETE /projects/:id` — Delete project (JWT-guarded)
+### Backend
 
-### Tasks (`/tasks`)
-- `GET /tasks` — List tasks with query params (`?projectId=`, `?status=`, `?search=`)
-- `GET /tasks/:id` — Get task by ID with subtasks, comments, updates
-- `POST /tasks` — Create new task (JWT-guarded)
-- `PATCH /tasks/:id` — Update task fields (status, priority, assignees, labels, dates) (JWT-guarded)
-- `DELETE /tasks/:id` — Delete task (JWT-guarded)
-- `POST /tasks/:id/subtasks` — Add subtask to task (JWT-guarded)
-- `PATCH /tasks/:id/subtasks/:subtaskId` — Update/toggle subtask (JWT-guarded)
-- `POST /tasks/:id/comments` — Add comment to task (JWT-guarded)
+Create:
 
----
+```text
+backend/.env
+```
 
-## 🔌 Backend Integration Details
+Add:
 
-The Next.js frontend has been connected to the NestJS API **without altering the public interfaces** of `useAuth()`, `useTasks()`, or `useProjects()`.
+```env
+DATABASE_URL="YOUR_MONGODB_CONNECTION_STRING"
+JWT_SECRET="YOUR_SECURE_JWT_SECRET"
+JWT_EXPIRES_IN="7d"
+GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+CORS_ORIGIN="http://localhost:3001,http://localhost:3000"
+PORT=3000
+```
 
-### Key Changes:
-1. **`src/lib/api.ts`**:
-   - Created a typed fetch wrapper reading `process.env.NEXT_PUBLIC_API_URL`.
-   - Automatically attaches `Authorization: Bearer <token>` from stored session.
-   - Throws clear error messages on non-2xx responses.
+> Never commit `.env`, `.env.local`, database credentials, JWT secrets, or Google credentials to GitHub.
 
-2. **`useAuth.tsx`**:
-   - Replaced mock session generation with real API calls to `/auth/guest` and `/auth/google`.
-   - Stores returned `accessToken` alongside `user` and `provider` under `STORAGE_KEYS.session` in `localStorage`.
+## 🔐 Google Sign-In
 
-3. **`useTasks.tsx` & `useProjects.tsx`**:
-   - Replaced `useLocalStorage` backing state with `useState` + `useEffect` fetching live data from `/tasks` and `/projects` on mount.
-   - All mutation methods (`addTask`, `updateTask`, `deleteTask`, `moveTask`, `addComment`, `addSubtask`, `toggleSubtask`, `addProject`) call the corresponding NestJS endpoint and optimistically update state.
+Pyramid uses **Google Identity Services (GIS)** for authentication.
 
----
+### Local Development
 
-## 🗄️ Database Seeding
+Add these authorized JavaScript origins to your Google OAuth Web Client:
 
-To load the exact mock data from `src/data/` into your MongoDB database:
+```text
+http://localhost:3001
+http://localhost:3000
+```
+
+### Production
+
+Add your deployed frontend origin:
+
+```text
+https://pyramid-task-management-1wx8.onrender.com
+```
+
+The same Google Client ID should be configured in both the frontend and backend environment variables.
+
+## 📡 API Overview
+
+Protected `POST`, `PATCH`, and `DELETE` requests require:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+### Health & Documentation
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | API health check |
+| GET | `/api/docs` | Swagger/OpenAPI documentation |
+
+### Authentication
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/guest` | Guest authentication |
+| POST | `/auth/google` | Google authentication |
+| GET | `/auth/me` | Current authenticated user |
+
+### Users
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/users` | List users/members |
+
+### Projects
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/projects` | List projects |
+| GET | `/projects/:id` | Get project details |
+| POST | `/projects` | Create project |
+| PATCH | `/projects/:id` | Update project |
+| DELETE | `/projects/:id` | Delete project |
+
+### Tasks
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/tasks` | List/filter tasks |
+| GET | `/tasks/:id` | Get task details |
+| POST | `/tasks` | Create task |
+| PATCH | `/tasks/:id` | Update task |
+| DELETE | `/tasks/:id` | Delete task |
+| POST | `/tasks/:id/subtasks` | Add subtask |
+| PATCH | `/tasks/:id/subtasks/:subtaskId` | Update subtask |
+| POST | `/tasks/:id/comments` | Add comment |
+| POST | `/tasks/:id/resources` | Add resource |
+| DELETE | `/tasks/:id/resources/:resourceId` | Delete resource |
+
+## 🗄️ Database
+
+Pyramid uses **MongoDB with Prisma ORM**.
+
+MongoDB fits the task domain because tasks contain nested data such as:
+
+- Subtasks
+- Comments
+- Activity updates
+- Member assignments
+- Labels
+
+For local development, MongoDB runs in replica-set mode so Prisma transactions are supported.
+
+## 🌱 Database Seeding
+
+To populate the database with the initial data:
 
 ```bash
 cd backend
 npm run prisma:seed
 ```
 
----
+## 🚢 Deployment
 
-## 🚢 Deployment Guide
+The application is deployed using **Render**, with **MongoDB Atlas** as the database.
 
-### Deploying Backend (Render or Railway + MongoDB Atlas)
-1. Provision a free MongoDB database on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2. Connect to backend service on Render or Railway.
-3. Configure build and start commands:
-   - **Build Command**: `npm run build`
-   - **Start Command**: `npm run start:prod`
-4. Environment variables:
-   - `DATABASE_URL`: MongoDB Atlas replica set URI (`mongodb+srv://...`)
-   - `JWT_SECRET`: Random 32+ char secret string
-   - `JWT_EXPIRES_IN`: `7d`
-   - `GOOGLE_CLIENT_ID`: Google OAuth Client ID
-   - `CORS_ORIGIN`: Deployed Vercel frontend URL
-   - `PORT`: `3000`
+### Backend
 
-### Deploying Frontend (Vercel)
-1. Import the `/frontend` directory in Vercel.
-2. Set Environment Variables:
-   - `NEXT_PUBLIC_API_URL`: URL of your deployed NestJS backend (e.g. `https://pyramid-api.onrender.com`).
-   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth Client ID
-3. Deploy!
+Build command:
+
+```text
+npm run build
+```
+
+Start command:
+
+```text
+npm run start:prod
+```
+
+Production environment variables:
+
+```env
+DATABASE_URL=YOUR_MONGODB_ATLAS_URI
+JWT_SECRET=YOUR_SECURE_SECRET
+JWT_EXPIRES_IN=7d
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+CORS_ORIGIN=https://your-frontend-page.com
+PORT=3000
+```
+
+### Frontend
+
+Root Directory:
+
+```text
+frontend
+```
+
+Build command:
+
+```text
+npm ci && npm run build
+```
+
+Start command:
+
+```text
+npm start
+```
+
+Production environment variables:
+
+```env
+NEXT_PUBLIC_API_URL=https://your-backend-page.com
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+```
+
+## 🧪 Production Verification
+
+After deployment, verify:
+
+- Health endpoint responds successfully
+- Guest login works
+- Google Sign-In works
+- Projects load correctly
+- Tasks load correctly
+- Task creation, editing, and deletion work
+- Subtasks work
+- Comments work
+- Resources work
+- Authentication persists after refresh
+- Responsive/mobile layouts work
+
+## 🔒 Security
+
+- Secrets are stored in environment variables.
+- JWT authentication protects mutating API operations.
+- Google ID tokens are verified by the backend.
+- CORS restricts browser access to configured frontend origins.
+- Environment files containing credentials must not be committed.
+
+## 📄 License
+
+This project is currently intended as a personal/portfolio project.
+
+## 👨‍💻 Author
+
+**Nithin R**
+
+GitHub: https://github.com/nithinr8265
+
+Repository: https://github.com/nithinr8265/pyramid-task-management
+
+Live: https://pyramid-task-management-1wx8.onrender.com/login
