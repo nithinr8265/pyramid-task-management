@@ -1,165 +1,293 @@
 # Pyramid — Task Management System
 
-A task management web application built from the provided design screens. The project focuses on the frontend implementation, responsive UI, task/project management, and theme customization.
+A modern and responsive task management web application built with **Next.js, React, TypeScript, and Tailwind CSS**.
 
-## Tech Stack
+Pyramid provides a clean productivity-focused interface for managing tasks and projects through Kanban and List views, with task filtering, subtasks, comments, project management, and customizable themes.
 
-* Next.js 16
-* React 19
-* TypeScript
-* Tailwind CSS v4
-* Lucide React
-* Browser `localStorage`
+## ✨ Features
 
-## Features
+### 🔐 Authentication
 
-### Authentication
+- Continue as Guest
+- Mock Google Sign-In
+- Persistent login session using `localStorage`
+- Protected application routes
+- Logout functionality
 
-* Continue as Guest
-* Mock Google login
-* Login session stored in `localStorage`
-* Protected application routes
-* Logout functionality
+### ✅ Task Management
 
-### Tasks
+- Kanban board view
+- List view
+- Create and delete tasks
+- Search tasks
+- Filter by:
+  - Status
+  - Priority
+  - Members
+  - Due date
+  - Labels
+- Show/hide task fields
+- Task detail pages
+- Edit task title and description
+- Assign members
+- Set task priority
+- Set due dates
+- Add labels
+- Create and manage subtasks
+- Add comments
+- View task activity and updates
 
-* Kanban board view
-* List view
-* Search tasks
-* Filter by status, priority, members, due date, and labels
-* Show/hide task fields
-* Add and delete tasks
-* Task detail page
-* Edit task title and description
-* Assign members
-* Set priority and due date
-* Add labels
-* Add subtasks
-* Comments section
-* Task activity/updates
+### 📁 Project Management
 
-### Projects
+- Projects overview
+- Search and filtering
+- Create projects
+- Project detail pages
+- View project-related tasks
+- Kanban and List views for project tasks
 
-* Projects list
-* Search and filtering
-* Add projects
-* Project details
-* View tasks belonging to a project
-* Board and List views for project tasks
+### ⚙️ Settings & Customization
 
-### Settings
+- Profile settings
+- Light and dark themes
+- Accent color customization
+- Persistent theme preferences
+- Responsive settings navigation
 
-* Profile settings
-* Light and dark themes
-* Accent color selection
-* Settings are saved between sessions
+### 📱 Responsive Design
 
-### Responsive Design
+The application is designed for desktop, tablet, and mobile devices.
 
-The application is designed to work across desktop, tablet, and mobile screen sizes.
+- Responsive sidebar with mobile drawer
+- Horizontal scrolling Kanban board on smaller screens
+- Responsive task and project layouts
+- Mobile-friendly task details
+- Responsive settings navigation
 
-* Responsive sidebar with mobile drawer
-* Horizontal scrolling for the Kanban board on smaller screens
-* Responsive task and project tables
-* Mobile-friendly task details layout
-* Responsive settings navigation
+## 🛠️ Tech Stack
 
-## Project Structure
+| Technology | Purpose |
+|---|---|
+| Next.js 16 | React framework and application routing |
+| React 19 | UI development |
+| TypeScript | Type-safe development |
+| Tailwind CSS v4 | Styling and responsive design |
+| Lucide React | UI icons |
+| localStorage | Client-side data persistence |
+
+## 📂 Project Structure
 
 ```text
 src/
 ├── app/
-│   ├── login/
+│   ├── login/                 # Authentication page
 │   ├── (app)/
-│   │   ├── tasks/
-│   │   └── projects/
-│   └── settings/
+│   │   ├── tasks/             # Task pages
+│   │   └── projects/          # Project pages
+│   └── settings/              # Application settings
 │
 ├── components/
-│   ├── layout/
-│   ├── navigation/
-│   ├── tasks/
-│   ├── projects/
-│   └── ui/
+│   ├── layout/                # Application layout components
+│   ├── navigation/            # Sidebar and navigation
+│   ├── tasks/                 # Task-related components
+│   ├── projects/              # Project-related components
+│   └── ui/                    # Reusable UI components
 │
-├── hooks/
-├── data/
-├── types/
-└── lib/
+├── hooks/                     # Application state and custom hooks
+├── data/                      # Initial mock data
+├── types/                     # TypeScript interfaces and types
+└── lib/                       # Utility and storage functions
 ```
 
-## Getting Started
+## 🚀 Getting Started
 
-Clone the repository and install the dependencies:
+### Prerequisites
+
+Make sure you have the following installed:
+
+- Node.js 20 or later
+- npm
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/nithinr8265/pyramid-task-management.git
+cd pyramid-task-management/frontend
+```
+
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-Start the development server:
+### 3. Start the development server
 
 ```bash
 npm run dev
 ```
 
-Open:
+Open the application at:
 
 ```text
 http://localhost:3000
 ```
 
-For a production build:
+### 4. Create a production build
 
 ```bash
 npm run build
+```
+
+### 5. Start the production server
+
+```bash
 npm run start
 ```
 
-To run ESLint:
+### 6. Run ESLint
 
 ```bash
 npm run lint
 ```
 
-## Data Storage
+## 💾 Data Storage
 
-This version is frontend-only, so there is no backend or database.
+The frontend version uses browser-based `localStorage` for client-side persistence.
 
-Tasks, projects, authentication state, theme settings, and other user preferences are stored in the browser using `localStorage`.
+The following application data can be stored locally:
 
-The application logic is kept inside reusable hooks such as:
+- Authentication state
+- Tasks
+- Projects
+- Theme preferences
+- Accent color
+- User preferences
 
-* `useAuth`
-* `useTasks`
-* `useProjects`
-* `useTheme`
-* `useLocalStorage`
+The application uses reusable hooks to keep state and storage logic separate from UI components:
 
-This keeps the components separated from the storage logic and makes it easier to connect a real API later.
+```text
+useAuth
+useTasks
+useProjects
+useTheme
+useLocalStorage
+```
 
-## Design Notes
+This structure keeps the application modular and makes the frontend easier to integrate with a backend API.
 
-The provided screenshots were used as the main reference for the UI.
+## 🎨 Design & UI
 
-A few areas were simplified for the frontend-only implementation:
+The interface was developed using the provided design screens as the primary visual reference.
 
-* Google login uses a mock account instead of real OAuth.
-* Tasks and projects use local mock data.
-* The task due date uses a single date instead of a date range.
-* Resources are currently UI-only and don't upload files.
-* Board and List views use the same underlying task data.
+The implementation focuses on:
 
-## Future Backend Integration
+- Clean dashboard layouts
+- Consistent spacing and typography
+- Reusable UI components
+- Responsive behavior
+- Kanban and List task views
+- Mobile-friendly interactions
+- Theme customization
 
-A real backend can be connected later without changing most of the UI components.
+Some functionality has intentionally been simplified for the frontend implementation.
 
-The existing hooks can be updated to communicate with a NestJS API for:
+### Current Frontend Limitations
 
-* User authentication
-* Task CRUD operations
-* Project CRUD operations
-* Task assignments
-* Comments
-* Persistent database storage
+- Google Sign-In currently uses a mock authentication flow.
+- Task and project data use local mock data.
+- Data is stored in browser `localStorage`.
+- Resources are currently UI-only and do not upload files.
+- Task due dates use a single date.
+- Board and List views use the same underlying task data.
 
+## 🧩 Architecture
 
+The application follows a component-based architecture:
+
+```text
+Pages
+  │
+  ├── Components
+  │      │
+  │      ├── Tasks
+  │      ├── Projects
+  │      ├── Navigation
+  │      └── UI
+  │
+  └── Custom Hooks
+         │
+         ├── useAuth
+         ├── useTasks
+         ├── useProjects
+         ├── useTheme
+         └── useLocalStorage
+```
+
+This separation helps keep:
+
+- UI components focused on presentation
+- Hooks responsible for application logic
+- Types centralized
+- Storage logic reusable
+- Feature-specific components organized
+
+## 🔌 Backend Integration
+
+The frontend is structured so that the local storage layer can be replaced with a real backend API.
+
+A backend can provide:
+
+- User authentication
+- Google OAuth
+- Task CRUD operations
+- Project CRUD operations
+- Task assignments
+- Comments
+- Subtasks
+- Resources
+- Persistent database storage
+
+The existing component and hook structure minimizes the amount of UI code that needs to change when connecting the application to a backend.
+
+## 📱 Responsive Support
+
+Pyramid supports:
+
+```text
+Desktop
+   ↓
+Tablet
+   ↓
+Mobile
+```
+
+Responsive behavior includes:
+
+- Collapsible navigation
+- Mobile drawer
+- Horizontal Kanban scrolling
+- Responsive task layouts
+- Mobile task detail pages
+- Responsive project views
+- Adaptive settings navigation
+
+## 🌐 Live Demo
+
+**Frontend:**  
+https://pyramid-task-management-1wx8.onrender.com
+
+> The live application is deployed as a frontend service. Free hosting services may take a short time to wake up after inactivity.
+
+## 👨‍💻 Author
+
+**Nithin R**
+
+GitHub:  
+https://github.com/nithinr8265
+
+Repository:  
+https://github.com/nithinr8265/pyramid-task-management
+
+Live : 
+https://pyramid-task-management-1wx8.onrender.com
